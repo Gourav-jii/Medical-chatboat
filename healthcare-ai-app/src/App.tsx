@@ -46,11 +46,14 @@ function AppRoutes() {
   )
 }
 
+import { Toaster } from 'react-hot-toast'
+
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <AppRoutes />
+        <Toaster position="top-right" />
       </AuthProvider>
     </BrowserRouter>
   )

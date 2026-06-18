@@ -1,4 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
+import type { ReactNode } from 'react'
+import toast from 'react-hot-toast'
+import { generateToken, verifyToken } from '../utils/jwt'
 
 export interface User {
   name: string
@@ -60,17 +63,20 @@ interface AuthContextType {
   updateSettings: (fields: Partial<UserSettings>) => void
 }
 
-const AUTH_KEY = 'mediai_auth'
+const JWT_KEY = 'mediai_jwt_token'
 const SETTINGS_KEY = 'mediai_settings'
 
 function loadAuth(): { isAuthenticated: boolean; user: User | null } {
   try {
-    const raw = localStorage.getItem(AUTH_KEY)
-    if (!raw) return { isAuthenticated: false, user: null }
-    const parsed = JSON.parse(raw)
-    if (parsed?.isAuthenticated && parsed?.user) return { isAuthenticated: true, user: parsed.user }
-  } catch { /* ignore */ }
-  return { isAuthenticated: false, user: null }
+    const token = localStorage.getItem(JWT_KEY)
+    if (!token) return { isAuthenticated: false, user: null }
+    const user = verifyToken(token)
+    return { isAuthenticated: true, user }
+  } catch (error) {
+    console.error('JWT Verification failed:', error)
+    localStorage.removeItem(JWT_KEY)
+    return { isAuthenticated: false, user: null }
+  }
 }
 
 function loadSettings(): UserSettings {
@@ -92,9 +98,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Persist auth
   useEffect(() => {
     if (isAuthenticated && user) {
-      localStorage.setItem(AUTH_KEY, JSON.stringify({ isAuthenticated: true, user }))
+      const token = generateToken(user)
+      localStorage.setItem(JWT_KEY, token)
     } else {
-      localStorage.removeItem(AUTH_KEY)
+      localStorage.removeItem(JWT_KEY)
     }
   }, [isAuthenticated, user])
 
@@ -109,22 +116,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     document.documentElement.style.fontSize = sizes[settings.appearance.fontSize]
   }, [settings.appearance.fontSize])
 
-  const login = async (email: string, _password: string) => {
+  const USERS_DB_KEY = 'mediai_users_db'
+
+  const login = async (email: string, password: string) => {
     await new Promise((r) => setTimeout(r, 1000))
-    const name = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-    setUser({ name, email, role: 'Patient' })
+    
+    // Hardcoded demo account for testing
+    if (email === 'demo@example.com' && password === 'password123') {
+      setUser({ name: 'Demo User', email, role: 'Patient' })
+      setIsAuthenticated(true)
+      toast.success('Successfully logged in!')
+      return
+    }
+
+    const usersRaw = localStorage.getItem(USERS_DB_KEY)
+    const users = usersRaw ? JSON.parse(usersRaw) : []
+    const foundUser = users.find((u: any) => u.email === email && u.password === password)
+    
+    if (!foundUser) {
+      toast.error('Invalid email or password')
+      throw new Error('Invalid credentials')
+    }
+    
+    setUser({ name: foundUser.name, email: foundUser.email, role: foundUser.role })
     setIsAuthenticated(true)
+    toast.success('Successfully logged in!')
   }
 
-  const signup = async (name: string, email: string, _password: string, role: string) => {
+  const signup = async (name: string, email: string, password: string, role: string) => {
     await new Promise((r) => setTimeout(r, 1000))
+    
+    const usersRaw = localStorage.getItem(USERS_DB_KEY)
+    const users = usersRaw ? JSON.parse(usersRaw) : []
+    
+    // Store new user credential
+    if (users.some((u: any) => u.email === email)) {
+      toast.error('Email already registered')
+      throw new Error('Email already registered')
+    }
+
+    users.push({ name, email, password, role })
+    localStorage.setItem(USERS_DB_KEY, JSON.stringify(users))
+
     setUser({ name, email, role })
     setIsAuthenticated(true)
+    toast.success('Account created successfully!')
   }
 
   const logout = () => {
     setIsAuthenticated(false)
     setUser(null)
+    toast.success('Successfully logged out')
   }
 
   const updateUser = (fields: Partial<User>) => {
