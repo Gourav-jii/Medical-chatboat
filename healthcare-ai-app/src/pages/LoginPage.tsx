@@ -58,12 +58,12 @@ export default function LoginPage() {
         <div className="absolute top-1/3 right-0 w-64 h-64 rounded-full bg-cyan-300/20" />
 
         {/* Logo */}
-        <div className="relative z-10 flex items-center gap-3">
+        <Link to="/" className="relative z-10 flex items-center gap-3">
           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
             <Heart className="w-6 h-6 text-teal-600" fill="currentColor" />
           </div>
           <span className="text-white text-xl font-bold tracking-tight">MediAI</span>
-        </div>
+        </Link>
 
         {/* Center content */}
         <div className="relative z-10 space-y-6">
@@ -110,12 +110,12 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center bg-gray-50 px-6 py-12 sm:px-12">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2 mb-8">
+          <Link to="/" className="lg:hidden flex items-center gap-2 mb-8">
             <div className="w-9 h-9 bg-teal-600 rounded-xl flex items-center justify-center">
               <Heart className="w-5 h-5 text-white" fill="currentColor" />
             </div>
             <span className="text-teal-700 text-xl font-bold">MediAI</span>
-          </div>
+          </Link>
 
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-gray-900">Welcome back</h2>

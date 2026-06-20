@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   Heart, Send, Bot, User as UserIcon, LogOut, X, MessageCircle,
@@ -139,6 +140,7 @@ const NAV_ITEMS = [
 // ── Main Dashboard Component ──────────────────────────────────────────────────
 export default function Dashboard() {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [activeSection, setActiveSection] = useState('home')
   const [suggestedSpecialty, setSuggestedSpecialty] = useState<string | null>(null)
 
@@ -298,7 +300,10 @@ export default function Dashboard() {
             {initials}
           </div>
           <button
-            onClick={logout}
+            onClick={() => {
+              logout()
+              navigate('/')
+            }}
             className="flex items-center gap-1.5 bg-white/10 hover:bg-white/25 border border-white/30 text-white px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer"
           >
             <LogOut className="w-4 h-4" />

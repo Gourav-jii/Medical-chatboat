@@ -133,12 +133,12 @@ export default function SignupPage() {
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-white/10" />
         <div className="absolute -bottom-28 -right-28 w-96 h-96 rounded-full bg-white/10" />
 
-        <div className="relative z-10 flex items-center gap-3">
+        <Link to="/" className="relative z-10 flex items-center gap-3">
           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
             <Heart className="w-6 h-6 text-teal-600" fill="currentColor" />
           </div>
           <span className="text-white text-xl font-bold">MediAI</span>
-        </div>
+        </Link>
 
         <div className="relative z-10 space-y-8">
           <div>
@@ -175,12 +175,12 @@ export default function SignupPage() {
       <div className="flex-1 flex items-start justify-center bg-gray-50 px-6 py-10 sm:px-12 overflow-y-auto">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2 mb-6">
+          <Link to="/" className="lg:hidden flex items-center gap-2 mb-6">
             <div className="w-9 h-9 bg-teal-600 rounded-xl flex items-center justify-center">
               <Heart className="w-5 h-5 text-white" fill="currentColor" />
             </div>
             <span className="text-teal-700 text-xl font-bold">MediAI</span>
-          </div>
+          </Link>
 
           <div className="mb-6">
             <h2 className="text-3xl font-bold text-gray-900">Create your account</h2>
