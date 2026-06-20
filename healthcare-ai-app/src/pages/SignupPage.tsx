@@ -2,15 +2,22 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Eye, EyeOff, Mail, Lock, User, Heart,
-  AlertCircle, Loader2, Phone, CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Heart,
+  Loader2,
+  Lock,
+  Mail,
+  User,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 interface FormErrors {
   name?: string
   email?: string
-  phone?: string
   role?: string
   password?: string
   confirm?: string
@@ -22,41 +29,51 @@ const roles = ['Patient', 'Caregiver', 'Healthcare Professional', 'Researcher']
 function PasswordStrength({ password }: { password: string }) {
   const checks = [
     { label: '8+ characters', ok: password.length >= 8 },
-    { label: 'Uppercase letter', ok: /[A-Z]/.test(password) },
+    { label: 'Uppercase', ok: /[A-Z]/.test(password) },
     { label: 'Number', ok: /\d/.test(password) },
-    { label: 'Special character', ok: /[^a-zA-Z0-9]/.test(password) },
+    { label: 'Special char', ok: /[^a-zA-Z0-9]/.test(password) },
   ]
-  const score = checks.filter((c) => c.ok).length
 
-  const bar = ['bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-teal-500']
-  const label = ['Weak', 'Fair', 'Good', 'Strong']
+  const score = checks.filter((check) => check.ok).length
+  const labels = ['Weak', 'Fair', 'Good', 'Strong']
 
   if (!password) return null
 
   return (
-    <div className="mt-2 space-y-2">
-      <div className="flex gap-1">
-        {[0, 1, 2, 3].map((i) => (
+    <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Password strength</p>
+        <span className={`text-xs font-bold ${score <= 1 ? 'text-red-600' : score === 2 ? 'text-amber-600' : 'text-emerald-600'}`}>
+          {labels[Math.max(score - 1, 0)]}
+        </span>
+      </div>
+
+      <div className="mt-3 flex gap-1.5">
+        {[0, 1, 2, 3].map((index) => (
           <div
-            key={i}
-            className={`h-1 flex-1 rounded-full transition-colors ${i < score ? bar[score - 1] : 'bg-gray-200'}`}
+            key={index}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              index < score
+                ? score === 1
+                  ? 'bg-red-400'
+                  : score === 2
+                    ? 'bg-amber-400'
+                    : score === 3
+                      ? 'bg-blue-400'
+                      : 'bg-emerald-500'
+                : 'bg-slate-200'
+            }`}
           />
         ))}
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-wrap gap-x-3 gap-y-1">
-          {checks.map(({ label, ok }) => (
-            <span key={label} className={`text-xs flex items-center gap-1 ${ok ? 'text-teal-600' : 'text-gray-400'}`}>
-              <CheckCircle2 className="w-3 h-3" />
-              {label}
-            </span>
-          ))}
-        </div>
-        {score > 0 && (
-          <span className={`text-xs font-semibold ${bar[score - 1].replace('bg-', 'text-')}`}>
-            {label[score - 1]}
+
+      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1">
+        {checks.map(({ label, ok }) => (
+          <span key={label} className={`flex items-center gap-1 text-xs ${ok ? 'text-emerald-600' : 'text-slate-400'}`}>
+            <CheckCircle2 className="h-3 w-3" />
+            {label}
           </span>
-        )}
+        ))}
       </div>
     </div>
   )
@@ -64,7 +81,7 @@ function PasswordStrength({ password }: { password: string }) {
 
 export default function SignupPage() {
   const { signup } = useAuth()
-  const [form, setForm] = useState({ name: '', email: '', phone: '', role: '', password: '', confirm: '' })
+  const [form, setForm] = useState({ name: '', email: '', role: '', password: '', confirm: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [termsAccepted, setTermsAccepted] = useState(false)
@@ -81,15 +98,12 @@ export default function SignupPage() {
 
   const validate = (): boolean => {
     const e: FormErrors = {}
+
     if (!form.name.trim()) e.name = 'Full name is required'
     else if (form.name.trim().length < 2) e.name = 'Name must be at least 2 characters'
 
     if (!form.email.trim()) e.email = 'Email is required'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Enter a valid email address'
-
-    if (form.phone && !/^\+?[\d\s\-()]{7,15}$/.test(form.phone)) {
-      e.phone = 'Enter a valid phone number'
-    }
 
     if (!form.role) e.role = 'Please select your role'
 
@@ -109,6 +123,7 @@ export default function SignupPage() {
     e.preventDefault()
     setApiError('')
     if (!validate()) return
+
     setLoading(true)
     try {
       await signup(form.name, form.email, form.password, form.role)
@@ -119,89 +134,71 @@ export default function SignupPage() {
     }
   }
 
-  const inputClass = (field: keyof FormErrors) =>
-    `w-full pl-10 pr-4 py-3 rounded-xl border text-sm transition-colors outline-none focus:ring-2 focus:ring-teal-500/30 ${
+  const inputClass = (field: keyof FormErrors, withRightPadding = false) =>
+    `w-full rounded-2xl border py-3 text-sm font-medium text-slate-950 placeholder:text-slate-400 outline-none transition focus:bg-white focus:ring-2 focus:ring-blue-500/20 ${
       errors[field]
         ? 'border-red-400 bg-red-50 focus:border-red-400'
-        : 'border-gray-300 bg-white focus:border-teal-500'
-    }`
+        : 'border-slate-200 bg-slate-50 focus:border-blue-500'
+    } ${withRightPadding ? 'pl-10 pr-11' : 'pl-10 pr-4'}`
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left branding panel */}
-      <div className="hidden lg:flex lg:w-5/12 bg-gradient-to-br from-teal-700 via-teal-600 to-cyan-500 flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-white/10" />
-        <div className="absolute -bottom-28 -right-28 w-96 h-96 rounded-full bg-white/10" />
+    <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#eef6ff_100%)] text-slate-900">
+      <div className="pointer-events-none absolute -left-24 top-[-6rem] h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
+      <div className="pointer-events-none absolute right-[-5rem] top-24 h-80 w-80 rounded-full bg-emerald-200/30 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-[-6rem] left-1/2 h-80 w-[32rem] -translate-x-1/2 rounded-full bg-cyan-100/40 blur-3xl" />
 
-        <Link to="/" className="relative z-10 flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
-            <Heart className="w-6 h-6 text-teal-600" fill="currentColor" />
-          </div>
-          <span className="text-white text-xl font-bold">MediAI</span>
-        </Link>
-
-        <div className="relative z-10 space-y-8">
-          <div>
-            <h1 className="text-4xl font-bold text-white leading-snug">
-              Join thousands of people managing their health smarter
-            </h1>
-            <p className="mt-4 text-teal-100">
-              Create your free account and get instant access to AI-powered health tools.
-            </p>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { value: '200K+', label: 'Active users' },
-              { value: '98%', label: 'Satisfaction rate' },
-              { value: '50+', label: 'Specialties covered' },
-              { value: '24/7', label: 'AI availability' },
-            ].map(({ value, label }) => (
-              <div key={label} className="bg-white/10 border border-white/20 rounded-xl p-4">
-                <p className="text-2xl font-bold text-white">{value}</p>
-                <p className="text-teal-200 text-sm mt-0.5">{label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="relative z-10 text-teal-200 text-xs">
-          © 2026 MediAI Inc. · HIPAA Compliant · SOC 2 Certified
-        </div>
-      </div>
-
-      {/* Right form panel */}
-      <div className="flex-1 flex items-start justify-center bg-gray-50 px-6 py-10 sm:px-12 overflow-y-auto">
-        <div className="w-full max-w-md">
-          {/* Mobile logo */}
-          <Link to="/" className="lg:hidden flex items-center gap-2 mb-6">
-            <div className="w-9 h-9 bg-teal-600 rounded-xl flex items-center justify-center">
-              <Heart className="w-5 h-5 text-white" fill="currentColor" />
+      <div className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <Link to="/" className="inline-flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 text-white shadow-lg shadow-blue-200">
+              <Heart className="h-5 w-5" fill="currentColor" />
             </div>
-            <span className="text-teal-700 text-xl font-bold">MediAI</span>
+            <div className="text-left">
+              <p className="text-base font-extrabold tracking-tight text-slate-900">MediAssist AI</p>
+              <p className="text-[11px] font-medium text-slate-500">Create your secure health profile</p>
+            </div>
           </Link>
 
-          <div className="mb-6">
-            <h2 className="text-3xl font-bold text-gray-900">Create your account</h2>
-            <p className="mt-1.5 text-gray-500">Start your health journey — it's free</p>
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-100"
+          >
+            Sign in
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+
+        <div className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.1)] backdrop-blur-2xl sm:p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 text-white shadow-lg shadow-blue-200">
+                <Heart className="h-5 w-5" fill="currentColor" />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Create account</p>
+                <h2 className="text-3xl font-black tracking-tight text-slate-900">Join MediAssist AI</h2>
+              </div>
+            </div>
           </div>
 
+          <p className="mt-4 max-w-md text-sm leading-6 text-slate-600">
+            Create your profile to save chats, compare recommendations, and move between desktop and mobile with ease.
+          </p>
+
           {apiError && (
-            <div className="mb-5 flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="mt-5 flex items-center gap-2.5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <AlertCircle className="h-4 w-4 shrink-0" />
               {apiError}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
-            {/* Full Name */}
+          <form onSubmit={handleSubmit} noValidate className="mt-5 space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label htmlFor="name" className="mb-1.5 block text-sm font-semibold text-slate-700">
                 Full name
               </label>
               <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 pointer-events-none" />
+                <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   id="name"
                   type="text"
@@ -213,19 +210,18 @@ export default function SignupPage() {
                 />
               </div>
               {errors.name && (
-                <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {errors.name}
+                <p className="mt-1.5 flex items-center gap-1 text-xs text-red-600">
+                  <AlertCircle className="h-3 w-3" /> {errors.name}
                 </p>
               )}
             </div>
 
-            {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label htmlFor="email" className="mb-1.5 block text-sm font-semibold text-slate-700">
                 Email address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 pointer-events-none" />
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   id="email"
                   type="email"
@@ -237,70 +233,46 @@ export default function SignupPage() {
                 />
               </div>
               {errors.email && (
-                <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {errors.email}
+                <p className="mt-1.5 flex items-center gap-1 text-xs text-red-600">
+                  <AlertCircle className="h-3 w-3" /> {errors.email}
                 </p>
               )}
             </div>
 
-            {/* Phone (optional) */}
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Phone number <span className="text-gray-400 font-normal">(optional)</span>
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 pointer-events-none" />
-                <input
-                  id="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  value={form.phone}
-                  onChange={(e) => update('phone', e.target.value)}
-                  placeholder="+1 (555) 000-0000"
-                  className={`w-full pl-10 pr-4 py-3 rounded-xl border text-sm transition-colors outline-none focus:ring-2 focus:ring-teal-500/30 ${
-                    errors.phone ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white focus:border-teal-500'
-                  }`}
-                />
-              </div>
-              {errors.phone && (
-                <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {errors.phone}
-                </p>
-              )}
-            </div>
-
-            {/* Role */}
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1.5">
-                I am a…
+              <label htmlFor="role" className="mb-1.5 block text-sm font-semibold text-slate-700">
+                I am a...
               </label>
               <select
                 id="role"
                 value={form.role}
                 onChange={(e) => update('role', e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl border text-sm transition-colors outline-none focus:ring-2 focus:ring-teal-500/30 appearance-none cursor-pointer ${
-                  errors.role ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white focus:border-teal-500'
-                } ${!form.role ? 'text-gray-400' : 'text-gray-900'}`}
+                className={`w-full appearance-none rounded-2xl border px-4 py-3 text-sm outline-none transition focus:bg-white focus:ring-2 focus:ring-blue-500/20 ${
+                  errors.role ? 'border-red-400 bg-red-50 focus:border-red-400' : 'border-slate-200 bg-slate-50 focus:border-blue-500'
+                } ${!form.role ? 'text-slate-400' : 'text-slate-900'}`}
               >
-                <option value="" disabled>Select your role</option>
-                {roles.map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                <option value="" disabled>
+                  Select your role
+                </option>
+                {roles.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
                 ))}
               </select>
               {errors.role && (
-                <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {errors.role}
+                <p className="mt-1.5 flex items-center gap-1 text-xs text-red-600">
+                  <AlertCircle className="h-3 w-3" /> {errors.role}
                 </p>
               )}
             </div>
 
-            {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label htmlFor="password" className="mb-1.5 block text-sm font-semibold text-slate-700">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 pointer-events-none" />
+                <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -308,34 +280,35 @@ export default function SignupPage() {
                   value={form.password}
                   onChange={(e) => update('password', e.target.value)}
                   placeholder="Min. 8 characters"
-                  className={`w-full pl-10 pr-10 py-3 rounded-xl border text-sm transition-colors outline-none focus:ring-2 focus:ring-teal-500/30 ${
-                    errors.password ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white focus:border-teal-500'
+                  className={`w-full rounded-2xl border py-3 pl-10 pr-11 text-sm font-medium text-slate-950 placeholder:text-slate-400 outline-none transition focus:bg-white focus:ring-2 focus:ring-blue-500/20 ${
+                    errors.password
+                      ? 'border-red-400 bg-red-50 focus:border-red-400'
+                      : 'border-slate-200 bg-slate-50 focus:border-blue-500'
                   }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
                   aria-label="Toggle password visibility"
                 >
-                  {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               <PasswordStrength password={form.password} />
               {errors.password && (
-                <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {errors.password}
+                <p className="mt-1.5 flex items-center gap-1 text-xs text-red-600">
+                  <AlertCircle className="h-3 w-3" /> {errors.password}
                 </p>
               )}
             </div>
 
-            {/* Confirm Password */}
             <div>
-              <label htmlFor="confirm" className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label htmlFor="confirm" className="mb-1.5 block text-sm font-semibold text-slate-700">
                 Confirm password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 pointer-events-none" />
+                <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   id="confirm"
                   type={showConfirm ? 'text' : 'password'}
@@ -343,32 +316,33 @@ export default function SignupPage() {
                   value={form.confirm}
                   onChange={(e) => update('confirm', e.target.value)}
                   placeholder="Repeat your password"
-                  className={`w-full pl-10 pr-10 py-3 rounded-xl border text-sm transition-colors outline-none focus:ring-2 focus:ring-teal-500/30 ${
-                    errors.confirm ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white focus:border-teal-500'
+                  className={`w-full rounded-2xl border py-3 pl-10 pr-11 text-sm font-medium text-slate-950 placeholder:text-slate-400 outline-none transition focus:bg-white focus:ring-2 focus:ring-blue-500/20 ${
+                    errors.confirm
+                      ? 'border-red-400 bg-red-50 focus:border-red-400'
+                      : 'border-slate-200 bg-slate-50 focus:border-blue-500'
                   }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
                   aria-label="Toggle confirm password visibility"
                 >
-                  {showConfirm ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {form.confirm && form.password === form.confirm && (
-                <p className="mt-1.5 text-xs text-teal-600 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Passwords match
+                <p className="mt-1.5 flex items-center gap-1 text-xs text-emerald-600">
+                  <CheckCircle2 className="h-3 w-3" /> Passwords match
                 </p>
               )}
               {errors.confirm && (
-                <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {errors.confirm}
+                <p className="mt-1.5 flex items-center gap-1 text-xs text-red-600">
+                  <AlertCircle className="h-3 w-3" /> {errors.confirm}
                 </p>
               )}
             </div>
 
-            {/* Terms */}
             <div>
               <div className="flex items-start gap-2.5">
                 <input
@@ -379,43 +353,49 @@ export default function SignupPage() {
                     setTermsAccepted(e.target.checked)
                     if (errors.terms) setErrors((prev) => ({ ...prev, terms: undefined }))
                   }}
-                  className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-teal-600 cursor-pointer shrink-0"
+                  className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-blue-600"
                 />
-                <label htmlFor="terms" className="text-sm text-gray-600 cursor-pointer leading-relaxed">
+                <label htmlFor="terms" className="cursor-pointer text-sm leading-relaxed text-slate-600">
                   I agree to the{' '}
-                  <a href="#" className="text-teal-600 hover:underline font-medium">Terms of Service</a>
-                  {' '}and{' '}
-                  <a href="#" className="text-teal-600 hover:underline font-medium">Privacy Policy</a>
+                  <a href="#" className="font-medium text-blue-600 hover:underline">
+                    Terms of Service
+                  </a>{' '}
+                  and{' '}
+                  <a href="#" className="font-medium text-blue-600 hover:underline">
+                    Privacy Policy
+                  </a>
                   , including data sharing for health services.
                 </label>
               </div>
               {errors.terms && (
-                <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {errors.terms}
+                <p className="mt-1.5 flex items-center gap-1 text-xs text-red-600">
+                  <AlertCircle className="h-3 w-3" /> {errors.terms}
                 </p>
               )}
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm mt-2"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-emerald-500 px-4 py-3.5 font-semibold text-white shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-70"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Creating account…
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Creating account...
                 </>
               ) : (
-                'Create free account'
+                <>
+                  Create free account
+                  <ArrowRight className="h-4 w-4" />
+                </>
               )}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-500">
+          <p className="mt-6 text-center text-sm text-slate-500">
             Already have an account?{' '}
-            <Link to="/login" className="text-teal-600 hover:text-teal-700 font-semibold">
+            <Link to="/login" className="font-semibold text-blue-600 transition hover:text-blue-700">
               Sign in
             </Link>
           </p>

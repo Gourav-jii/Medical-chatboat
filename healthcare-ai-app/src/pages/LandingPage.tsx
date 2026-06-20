@@ -1,27 +1,26 @@
-import { useEffect, useState, type ComponentType } from 'react'
+import { useEffect, useState, type ComponentType, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Activity,
   ArrowRight,
   Bot,
-  Calendar,
-  CheckCircle,
   Clock,
   Heart,
   History,
   Info,
   Mail,
-  MapPin,
   Menu,
   MessageCircle,
-  Phone,
   Pill,
   Search,
   ShieldCheck,
   Sparkles,
   Stethoscope,
+  Send,
+  User,
   X,
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 
 type Icon = ComponentType<{ className?: string }>
@@ -32,7 +31,7 @@ const NAV_LINKS = [
   { id: 'contact', label: 'Contact' },
 ] as const
 
-const SECTION_IDS = ['hero', 'features', 'how-it-works', 'why-choose-us', 'app-preview', 'contact'] as const
+const SECTION_IDS = ['hero', 'features', 'how-it-works', 'why-choose-us', 'disclaimer', 'contact'] as const
 
 const FEATURE_CARDS = [
   {
@@ -53,7 +52,7 @@ const FEATURE_CARDS = [
   {
     icon: Heart,
     title: 'Doctor Recommendations',
-    description: 'Recommend the right specialist based on the user’s concern, history, and care needs.',
+    description: "Recommend the right specialist based on the user's concern, history, and care needs.",
   },
   {
     icon: MessageCircle,
@@ -111,49 +110,13 @@ const WHY_CARDS = [
   },
 ] as const
 
-const HERO_STATS = [
-  { icon: Clock, value: '24/7', label: 'Always-on guidance' },
-  { icon: Activity, value: 'Instant', label: 'AI triage support' },
-  { icon: ShieldCheck, value: 'Secure', label: 'Private conversations' },
-] as const
+const CONTACT_TOPICS = ['Product demos', 'Partnerships', 'Feedback', 'Support'] as const
 
-const CHAT_MESSAGES = [
-  {
-    role: 'user',
-    text: 'I have a headache and mild fever since this morning.',
-  },
-  {
-    role: 'assistant',
-    text: 'Thanks for sharing that. I can help you review possible causes, medicine guidance, and whether it would be wise to speak with a doctor.',
-  },
-] as const
-
-const SYMPTOM_BARS = [
-  { label: 'Headache', width: 'w-11/12', tone: 'bg-blue-500' },
-  { label: 'Fever', width: 'w-4/5', tone: 'bg-emerald-500' },
-  { label: 'Fatigue', width: 'w-3/4', tone: 'bg-cyan-500' },
-] as const
-
-const DOCTOR_CARDS = [
-  {
-    name: 'Dr. Emily Chen',
-    specialty: 'Cardiology',
-    rating: '4.9',
-    note: 'Available tomorrow',
-  },
-  {
-    name: 'Dr. Marcus Rivera',
-    specialty: 'General Practice',
-    rating: '4.8',
-    note: 'Online today',
-  },
-  {
-    name: 'Dr. Priya Nair',
-    specialty: 'Dermatology',
-    rating: '4.7',
-    note: 'Evening slots',
-  },
-] as const
+interface ContactErrors {
+  name?: string
+  email?: string
+  message?: string
+}
 
 function scrollToSection(id: string) {
   const element = document.getElementById(id)
@@ -203,42 +166,13 @@ function IconTile({
   )
 }
 
-function PreviewPanel({
-  title,
-  icon: Icon,
-  accent,
-  children,
-}: {
-  title: string
-  icon: Icon
-  accent: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-      <div className={`flex items-center justify-between border-b border-slate-200/70 px-5 py-4 ${accent}`}>
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/90 text-slate-900 shadow-sm">
-            <Icon className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-900">{title}</h3>
-            <p className="text-[11px] font-medium text-slate-500">Production-style dashboard preview</p>
-          </div>
-        </div>
-        <div className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-700">
-          Live
-        </div>
-      </div>
-      <div className="p-5">{children}</div>
-    </div>
-  )
-}
-
 export default function LandingPage() {
   const { isAuthenticated } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState('hero')
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' })
+  const [contactErrors, setContactErrors] = useState<ContactErrors>({})
+  const [contactLoading, setContactLoading] = useState(false)
 
   const primaryCta = isAuthenticated ? '/dashboard' : '/signup'
   const loginTarget = isAuthenticated ? '/dashboard' : '/login'
@@ -271,6 +205,46 @@ export default function LandingPage() {
     scrollToSection(id)
   }
 
+  const updateContactField = (field: keyof typeof contactForm, value: string) => {
+    setContactForm((prev) => ({ ...prev, [field]: value }))
+    if (contactErrors[field]) {
+      setContactErrors((prev) => ({ ...prev, [field]: undefined }))
+    }
+  }
+
+  const contactInputClass = (field: keyof ContactErrors) =>
+    `w-full rounded-2xl border py-3 text-sm font-medium text-slate-950 placeholder:text-slate-400 outline-none transition focus:bg-white focus:ring-2 focus:ring-blue-500/20 ${
+      contactErrors[field]
+        ? 'border-red-400 bg-red-50 focus:border-red-400'
+        : 'border-slate-200 bg-slate-50 focus:border-blue-500'
+    }`
+
+  const handleContactSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    const nextErrors: ContactErrors = {}
+    if (!contactForm.name.trim()) nextErrors.name = 'Name is required'
+    else if (contactForm.name.trim().length < 2) nextErrors.name = 'Enter at least 2 characters'
+
+    if (!contactForm.email.trim()) nextErrors.email = 'Email is required'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactForm.email)) nextErrors.email = 'Enter a valid email'
+
+    if (!contactForm.message.trim()) nextErrors.message = 'Message is required'
+    else if (contactForm.message.trim().length < 12) nextErrors.message = 'Please write a bit more detail'
+
+    setContactErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) return
+
+    setContactLoading(true)
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 700))
+      toast.success('Thanks for reaching out. We will get back to you soon.')
+      setContactForm({ name: '', email: '', message: '' })
+    } finally {
+      setContactLoading(false)
+    }
+  }
+
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#eef6ff_100%)] text-slate-900">
       <div className="pointer-events-none absolute left-[-10rem] top-[-8rem] h-[28rem] w-[28rem] rounded-full bg-blue-200/40 blur-3xl animate-pulseGlow" />
@@ -279,11 +253,7 @@ export default function LandingPage() {
 
       <header className="sticky top-0 z-50 border-b border-white/60 bg-white/75 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <button
-            type="button"
-            onClick={() => navigateToSection('hero')}
-            className="flex items-center gap-3 text-left"
-          >
+          <button type="button" onClick={() => navigateToSection('hero')} className="flex items-center gap-3 text-left">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 text-white shadow-lg shadow-blue-200">
               <Heart className="h-5 w-5" fill="currentColor" />
             </div>
@@ -376,9 +346,9 @@ export default function LandingPage() {
       </header>
 
       <main className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <section id="hero" className="scroll-mt-28 pb-12 pt-12 sm:pb-14 sm:pt-14 lg:pb-16 lg:pt-16">
-          <div className="grid items-center gap-10 lg:grid-cols-[1.03fr_0.97fr]">
-            <div className="max-w-2xl">
+        <section id="hero" className="scroll-mt-28 pb-12 pt-14 sm:pb-16 sm:pt-16 lg:pb-16 lg:pt-16">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="mx-auto max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/90 px-4 py-2 text-xs font-semibold text-blue-700 shadow-sm backdrop-blur">
                 <Sparkles className="h-3.5 w-3.5" />
                 AI-powered healthcare guidance, designed for modern teams
@@ -388,12 +358,12 @@ export default function LandingPage() {
                 Your AI-Powered Healthcare Assistant
               </h1>
 
-              <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
+              <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
                 Get symptom-based health guidance, medicine information, and personalized healthcare recommendations
                 instantly.
               </p>
 
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
                 <Link
                   to={primaryCta}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-emerald-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 hover:shadow-xl"
@@ -408,85 +378,6 @@ export default function LandingPage() {
                 >
                   Learn More
                 </button>
-              </div>
-
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                {HERO_STATS.map(({ icon: Icon, value, label }) => (
-                  <div
-                    key={label}
-                    className="rounded-3xl border border-slate-200/80 bg-white/80 p-3.5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur-xl"
-                  >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <p className="mt-3 text-xl font-black tracking-tight text-slate-900">{value}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">{label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative mx-auto w-full max-w-2xl">
-              <div className="relative rounded-[2rem] border border-white/70 bg-white/70 p-3 shadow-[0_28px_90px_rgba(15,23,42,0.16)] backdrop-blur-2xl">
-                <div className="rounded-[1.6rem] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-4 text-white shadow-3d-soft">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-white">
-                        <Bot className="h-4.5 w-4.5" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold">MediAssist Live</p>
-                        <div className="mt-1 flex items-center gap-2 text-[11px] text-emerald-300">
-                          <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_6px_rgba(52,211,153,0.15)]" />
-                          Secure, responsive, and ready to help
-                        </div>
-                      </div>
-                    </div>
-                    <div className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold text-white/80">
-                      AI Caredesk
-                    </div>
-                  </div>
-
-                  <div className="mt-5 space-y-3">
-                    {CHAT_MESSAGES.map((message) => (
-                      <div
-                        key={message.text}
-                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-[85%] rounded-3xl px-4 py-3 text-sm leading-6 ${
-                            message.role === 'user'
-                              ? 'rounded-tr-md bg-blue-600 text-white'
-                              : 'rounded-tl-md border border-white/10 bg-white/10 text-white/90'
-                          }`}
-                        >
-                          {message.text}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-5 grid grid-cols-3 gap-2">
-                    {['Headache', 'Fever', 'Medication'].map((chip) => (
-                      <div
-                        key={chip}
-                        className="rounded-2xl border border-white/10 bg-white/10 px-2.5 py-1.5 text-center text-[10px] font-semibold text-white/85"
-                      >
-                        {chip}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-5 rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
-                    <div className="flex items-center justify-between text-[11px] font-semibold text-white/70">
-                      <span>Confidence</span>
-                      <span>92%</span>
-                    </div>
-                    <div className="mt-2 h-2 rounded-full bg-white/10">
-                      <div className="h-2 w-[92%] rounded-full bg-gradient-to-r from-blue-500 to-emerald-500" />
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -561,152 +452,12 @@ export default function LandingPage() {
                 className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur-xl transition-all hover:-translate-y-1 hover:shadow-[0_24px_70px_rgba(15,23,42,0.11)]"
               >
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-                  <card.icon className="h-5.5 w-5.5" />
+                  <card.icon className="h-5 w-5" />
                 </div>
                 <h3 className="mt-4 text-lg font-bold text-slate-900">{card.title}</h3>
                 <p className="mt-2.5 text-sm leading-6 text-slate-600">{card.description}</p>
               </div>
             ))}
-          </div>
-        </section>
-
-        <section id="app-preview" className="scroll-mt-28 py-12 sm:py-14">
-          <SectionHeading
-            eyebrow="App Preview"
-            title="Designed like a premium healthcare SaaS product"
-            description="These dashboard mockups show how the chatbot, symptom analysis, and doctor recommendation flows can feel in a real product."
-          />
-
-          <div className="mt-8 grid gap-4 xl:grid-cols-3">
-            <PreviewPanel
-              title="Chat Interface"
-              icon={MessageCircle}
-              accent="bg-gradient-to-r from-blue-50 to-cyan-50"
-            >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">AI Health Chat</p>
-                    <p className="text-xs text-slate-500">Real-time consultation style</p>
-                  </div>
-                  <div className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-700">
-                    Online
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="max-w-[84%] rounded-3xl rounded-tl-md bg-slate-100 px-4 py-3 text-sm leading-6 text-slate-700">
-                    I have a headache and feel tired.
-                  </div>
-                  <div className="ml-auto max-w-[86%] rounded-3xl rounded-tr-md bg-blue-600 px-4 py-3 text-sm leading-6 text-white">
-                    I can help with that. Let’s look at possible causes, medicine guidance, and the best next step.
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {['Headache', 'Fever', 'Medication'].map((chip) => (
-                    <span
-                      key={chip}
-                      className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-700"
-                    >
-                      {chip}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
-                  <div className="flex-1 text-sm text-slate-400">Ask the assistant anything...</div>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white">
-                    <ArrowRight className="h-4 w-4" />
-                  </div>
-                </div>
-              </div>
-            </PreviewPanel>
-
-            <PreviewPanel
-              title="Symptom Analysis Screen"
-              icon={Activity}
-              accent="bg-gradient-to-r from-emerald-50 to-cyan-50"
-            >
-              <div className="space-y-4">
-                <div className="rounded-2xl bg-slate-950 p-4 text-white">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-bold">Symptom summary</p>
-                      <p className="text-[11px] text-white/55">Structured AI analysis</p>
-                    </div>
-                    <div className="rounded-full bg-emerald-400/15 px-3 py-1 text-[11px] font-semibold text-emerald-300">
-                      Low urgency
-                    </div>
-                  </div>
-                  <div className="mt-4 space-y-3">
-                    {SYMPTOM_BARS.map((bar) => (
-                      <div key={bar.label}>
-                        <div className="mb-1.5 flex items-center justify-between text-[11px] font-semibold text-white/60">
-                          <span>{bar.label}</span>
-                          <span>Likely</span>
-                        </div>
-                        <div className="h-2 rounded-full bg-white/10">
-                          <div className={`h-2 rounded-full ${bar.width} ${bar.tone}`} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                    <Info className="h-4 w-4 text-blue-600" />
-                    Recommended next step
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Rest, stay hydrated, and monitor your symptoms. If they persist or worsen, seek professional care.
-                  </p>
-                </div>
-              </div>
-            </PreviewPanel>
-
-            <PreviewPanel
-              title="Doctor Recommendation Screen"
-              icon={Calendar}
-              accent="bg-gradient-to-r from-blue-50 to-emerald-50"
-            >
-              <div className="space-y-3">
-                {DOCTOR_CARDS.map((doctor) => (
-                  <div
-                    key={doctor.name}
-                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-blue-200 hover:bg-blue-50/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 text-sm font-bold text-white">
-                        {doctor.name
-                          .split(' ')
-                          .map((part) => part[0])
-                          .slice(0, 2)
-                          .join('')}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900">{doctor.name}</p>
-                        <p className="text-xs text-slate-500">{doctor.specialty}</p>
-                        <p className="mt-1 text-[11px] font-semibold text-emerald-600">{doctor.note}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center justify-end gap-1 text-xs font-bold text-amber-500">
-                        <Heart className="h-3.5 w-3.5" fill="currentColor" />
-                        {doctor.rating}
-                      </div>
-                      <button
-                        type="button"
-                        className="mt-2 rounded-full border border-blue-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-blue-700"
-                      >
-                        Book
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </PreviewPanel>
           </div>
         </section>
 
@@ -733,84 +484,153 @@ export default function LandingPage() {
         <section id="contact" className="scroll-mt-28 py-12 sm:py-14">
           <SectionHeading
             eyebrow="Contact"
-            title="Ready to bring MediAssist AI to your audience?"
-            description="Use the contact panel below for support, partnership questions, or product conversations."
+            title="Have a question or want a demo?"
+            description="A brighter contact area inspired by the footer layout you shared, but reworked for MediAssist AI."
           />
 
-          <div className="mt-8 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="relative overflow-hidden rounded-[2rem] bg-slate-950 p-7 text-white shadow-[0_28px_90px_rgba(15,23,42,0.2)] sm:p-8">
-              <div className="pointer-events-none absolute -right-10 top-[-2rem] h-40 w-40 rounded-full bg-blue-500/20 blur-3xl" />
-              <div className="pointer-events-none absolute -left-8 bottom-[-3rem] h-40 w-40 rounded-full bg-emerald-500/20 blur-3xl" />
-
-              <div className="relative z-10 max-w-2xl">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white/80">
-                  <Mail className="h-3.5 w-3.5" />
-                  We typically reply within one business day
-                </div>
-                <h3 className="mt-5 text-2xl font-black tracking-tight sm:text-3xl">
-                  Let’s build a better healthcare conversation.
-                </h3>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-white/70 sm:text-base">
-                  MediAssist AI is designed to feel calm, trustworthy, and easy to use for patients, caregivers, and
-                  modern healthcare teams.
-                </p>
-
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <a
-                    href="mailto:support@mediassist.ai"
-                    className="rounded-3xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"
-                  >
-                    <Mail className="h-5 w-5 text-blue-200" />
-                    <p className="mt-2.5 text-sm font-semibold">support@mediassist.ai</p>
-                    <p className="mt-1 text-xs text-white/55">General support and product questions</p>
-                  </a>
-                  <a
-                    href="tel:+15550132026"
-                    className="rounded-3xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"
-                  >
-                    <Phone className="h-5 w-5 text-emerald-200" />
-                    <p className="mt-2.5 text-sm font-semibold">+1 (555) 013-2026</p>
-                    <p className="mt-1 text-xs text-white/55">Monday to Friday, 9:00 AM - 6:00 PM</p>
-                  </a>
-                </div>
+          <div className="mt-8 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+            <div className="rounded-[2rem] border border-slate-200/80 bg-white/90 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur-xl sm:p-8">
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700">
+                <Mail className="h-3.5 w-3.5" />
+                Contact & Support
               </div>
-            </div>
 
-            <div className="rounded-[2rem] border border-slate-200/80 bg-white/85 p-7 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur-xl">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-                  <MapPin className="h-5 w-5" />
+              <h3 className="mt-4 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+                Let&apos;s make care feel simpler.
+              </h3>
+              <p className="mt-3 max-w-xl text-sm leading-7 text-slate-600 sm:text-base">
+                Inspired by the footer layout you shared, but reimagined in clean healthcare colors with a softer,
+                more premium feel.
+              </p>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Email</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900">support@mediassist.ai</p>
+                  <p className="mt-1 text-xs text-slate-500">General support and product questions</p>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Support scope</p>
-                  <p className="text-xs text-slate-500">Great for demos, pilots, and portfolio presentations</p>
+                <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-4">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600">Response</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900">Within one business day</p>
+                  <p className="mt-1 text-xs text-slate-500">Mon to Fri, 9:00 AM to 6:00 PM</p>
                 </div>
               </div>
 
-              <div className="mt-6 space-y-3">
-                {[
-                  'Patient support workflows',
-                  'AI chatbot UX demos',
-                  'Doctor recommendation dashboards',
-                  'Product and client presentation support',
-                ].map((item) => (
-                  <div key={item} className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-2.5">
-                    <CheckCircle className="h-4 w-4 text-emerald-500" />
-                    <span className="text-sm font-medium text-slate-700">{item}</span>
-                  </div>
+              <div className="mt-6 flex flex-wrap gap-2">
+                {CONTACT_TOPICS.map((topic) => (
+                  <span
+                    key={topic}
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600"
+                  >
+                    {topic}
+                  </span>
                 ))}
               </div>
             </div>
+
+            <form
+              onSubmit={handleContactSubmit}
+              className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.1)] backdrop-blur-2xl sm:p-8"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 text-white shadow-lg shadow-blue-200">
+                  <MessageCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Send a message</p>
+                  <h3 className="text-2xl font-black tracking-tight text-slate-900">Contact form</h3>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="contact-name" className="mb-1.5 block text-sm font-semibold text-slate-700">
+                    Your name
+                  </label>
+                  <div className="relative">
+                    <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <input
+                      id="contact-name"
+                      type="text"
+                      value={contactForm.name}
+                      onChange={(e) => updateContactField('name', e.target.value)}
+                      placeholder="Jane Smith"
+                      className={`${contactInputClass('name')} pl-10`}
+                    />
+                  </div>
+                  {contactErrors.name && (
+                    <p className="mt-1.5 text-xs text-red-600">{contactErrors.name}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="contact-email" className="mb-1.5 block text-sm font-semibold text-slate-700">
+                    Email address
+                  </label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <input
+                      id="contact-email"
+                      type="email"
+                      value={contactForm.email}
+                      onChange={(e) => updateContactField('email', e.target.value)}
+                      placeholder="you@example.com"
+                      className={`${contactInputClass('email')} pl-10`}
+                    />
+                  </div>
+                  {contactErrors.email && (
+                    <p className="mt-1.5 text-xs text-red-600">{contactErrors.email}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <label htmlFor="contact-message" className="mb-1.5 block text-sm font-semibold text-slate-700">
+                  Message
+                </label>
+                <div className="relative">
+                  <MessageCircle className="pointer-events-none absolute left-3.5 top-4 h-4 w-4 text-slate-400" />
+                  <textarea
+                    id="contact-message"
+                    rows={5}
+                    value={contactForm.message}
+                    onChange={(e) => updateContactField('message', e.target.value)}
+                    placeholder="Tell us what you would like help with..."
+                    className={`${contactInputClass('message')} min-h-[9rem] resize-none pl-10 pt-3`}
+                  />
+                </div>
+                {contactErrors.message && (
+                  <p className="mt-1.5 text-xs text-red-600">{contactErrors.message}</p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={contactLoading}
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-emerald-500 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {contactLoading ? (
+                  <>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    Send message
+                    <Send className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </form>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-slate-200 bg-white/85 backdrop-blur-xl">
+      <footer className="border-t border-slate-200/80 bg-white/90 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr_0.8fr_1fr]">
             <div>
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 text-white shadow-lg">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 text-white shadow-lg shadow-blue-200">
                   <Heart className="h-5 w-5" fill="currentColor" />
                 </div>
                 <div>
@@ -824,10 +644,33 @@ export default function LandingPage() {
             </div>
 
             <div>
-              <h4 className="text-sm font-bold text-slate-900">About</h4>
-              <p className="mt-4 text-sm leading-7 text-slate-600">
-                Built to help users quickly understand symptoms, medicines, and the next best action with a friendly UI.
-              </p>
+              <h4 className="text-sm font-bold text-slate-900">Company</h4>
+              <ul className="mt-4 space-y-3 text-sm text-slate-600">
+                <li>
+                  <button type="button" onClick={() => scrollToSection('features')} className="transition hover:text-blue-700">
+                    Features
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => scrollToSection('how-it-works')} className="transition hover:text-blue-700">
+                    How It Works
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => scrollToSection('contact')} className="transition hover:text-blue-700">
+                    Contact
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-bold text-slate-900">About Us</h4>
+              <ul className="mt-4 space-y-3 text-sm text-slate-600">
+                <li>Medical Disclaimer</li>
+                <li>Privacy Policy</li>
+                <li>Terms & Conditions</li>
+              </ul>
             </div>
 
             <div>
@@ -838,17 +681,9 @@ export default function LandingPage() {
                   support@mediassist.ai
                 </li>
                 <li className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-blue-600" />
-                  +1 (555) 013-2026
+                  <Clock className="h-4 w-4 text-blue-600" />
+                  Reply within one business day
                 </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-sm font-bold text-slate-900">Legal</h4>
-              <ul className="mt-4 space-y-3 text-sm text-slate-600">
-                <li>Privacy Policy</li>
-                <li>Terms & Conditions</li>
               </ul>
             </div>
           </div>
@@ -856,16 +691,12 @@ export default function LandingPage() {
           <div className="mt-8 flex flex-col gap-4 border-t border-slate-200 pt-5 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
             <p>© 2026 MediAssist AI. All rights reserved.</p>
             <div className="flex flex-wrap gap-4">
-              {NAV_LINKS.map((link) => (
-                <button
-                  key={link.id}
-                  type="button"
-                  onClick={() => scrollToSection(link.id)}
-                  className="font-medium text-slate-600 transition hover:text-blue-700"
-                >
-                  {link.label}
-                </button>
-              ))}
+              <button type="button" onClick={() => scrollToSection('disclaimer')} className="font-medium text-slate-600 transition hover:text-blue-700">
+                Medical Disclaimer
+              </button>
+              <button type="button" onClick={() => scrollToSection('contact')} className="font-medium text-slate-600 transition hover:text-blue-700">
+                Contact me
+              </button>
             </div>
           </div>
         </div>
