@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { toast } from 'react-hot-toast'
 import {
   Heart, Send, Bot, User as UserIcon, LogOut, X, MessageCircle,
   Activity, Calendar, Home,
@@ -58,6 +59,17 @@ function getResponse(input: string): string {
   if (l.includes('appointment') || l.includes('doctor') || l.includes('schedule')) return SAMPLE_RESPONSES.appointment
   if (l.includes('blood pressure') || l.includes('bp')) return SAMPLE_RESPONSES.bp
   return SAMPLE_RESPONSES.default
+}
+
+function isBookingTrigger(text: string): boolean {
+  const l = text.toLowerCase();
+  const bookingKeywords = [
+    'book', 'schedule', 'appoint', 'booking', 'consultation', 'apointment',
+    'milna', 'checkup', 'dikhao', 'karna hai', 'krna hai', 'le', 'krdo', 'kro'
+  ];
+  const isBookingWord = bookingKeywords.some(kw => l.includes(kw));
+  const hasAppointmentWord = l.includes('appointment') || l.includes('doctor') || l.includes('doc') || l.includes('consult');
+  return isBookingWord || (hasAppointmentWord && (l.includes('book') || l.includes('kro') || l.includes('krdo') || l.includes('karna') || l.includes('krna')));
 }
 
 function extractWebhookReply(payload: unknown): string | null {
@@ -265,6 +277,54 @@ export default function Dashboard() {
   
   const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS)
 
+  const handleConfirmBooking = async (
+    msgId: string,
+    doctorName: string,
+    date: string,
+    time: string,
+    reason: string,
+    isFloat: boolean
+  ) => {
+    // 1. Simulate API delay
+    await new Promise((r) => setTimeout(r, 800))
+
+    // 2. Find doctor info
+    const doc = DOCTORS.find((d) => d.name === doctorName) || { avatar: 'MD', specialty: 'General Practitioner' }
+
+    // 3. Format date
+    const dateObj = new Date(date + 'T00:00:00')
+    const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+
+    // 4. Create appointment
+    const newApt: Appointment = {
+      doctor: doctorName,
+      specialty: doc.specialty,
+      avatar: doc.avatar,
+      date: formattedDate,
+      time: time,
+      status: 'upcoming',
+    }
+
+    // 5. Update appointments state
+    setAppointments((prev) => [newApt, ...prev])
+
+    // 6. Toast success message
+    toast.success(`Appointment booked with ${doctorName}!`)
+
+    // 7. Update message text in chat
+    const successText = `✓ **Appointment Booked Successfully!**\n\n**Doctor:** ${doctorName} (${doc.specialty})\n**Date:** ${formattedDate}\n**Time:** ${time}\n**Reason:** ${reason || 'General consultation'}\n\nConfirmation sent. You can view this booking in your overview dashboard.`
+
+    if (isFloat) {
+      setFloatMsgs((prev) =>
+        prev.map((m) => (m.id === msgId ? { ...m, content: successText } : m))
+      )
+    } else {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === msgId ? { ...m, content: successText } : m))
+      )
+    }
+  }
+
   const initials = user?.name
     ?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() ?? 'U'
 
@@ -341,9 +401,16 @@ export default function Dashboard() {
       })
       if (!res.ok) throw new Error('fail')
       const reply = await parseWebhookResponse(res)
-      setFloatMsgs(prev => [...prev, { id: (Date.now()+1).toString(), role: 'assistant', content: reply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])
+      const finalReply = isBookingTrigger(content)
+        ? `${reply}\n\n[BOOKING_SYSTEM]`
+        : reply
+      setFloatMsgs(prev => [...prev, { id: (Date.now()+1).toString(), role: 'assistant', content: finalReply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])
     } catch {
-      setFloatMsgs(prev => [...prev, { id: (Date.now()+1).toString(), role: 'assistant', content: getResponse(content), time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])
+      let reply = getResponse(content)
+      if (isBookingTrigger(content)) {
+        reply = "I can help you book an appointment right now. Please select a doctor, choose your preferred date & time, and confirm the booking below:\n\n[BOOKING_SYSTEM]"
+      }
+      setFloatMsgs(prev => [...prev, { id: (Date.now()+1).toString(), role: 'assistant', content: reply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])
     } finally {
       setFloatTyping(false)
     }
@@ -469,12 +536,24 @@ export default function Dashboard() {
                       <MessageCircle className="w-3.5 h-3.5 text-white" fill="white" />
                     </div>
                   )}
-                  <div className={`max-w-[78%] px-3 py-2 rounded-2xl text-xs leading-relaxed ${
+                  <div className={`max-w-[78%] px-3 py-2 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap ${
                     msg.role === 'user'
                       ? 'bg-teal-600 text-white rounded-tr-sm'
                       : 'bg-white text-gray-700 border border-gray-200 rounded-tl-sm shadow-sm'
                   }`}>
-                    {msg.content}
+                    {msg.content.includes('[BOOKING_SYSTEM]') ? (
+                      <div className="space-y-2 text-left">
+                        <p>{msg.content.replace('[BOOKING_SYSTEM]', '').trim()}</p>
+                        <InlineBookingCard
+                          messageId={msg.id}
+                          onConfirm={async (msgId, docName, date, time, reason) => {
+                            await handleConfirmBooking(msgId, docName, date, time, reason, true)
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      msg.content
+                    )}
                   </div>
                   {msg.role === 'user' && (
                     <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center shrink-0 mt-0.5">
@@ -578,6 +657,7 @@ export default function Dashboard() {
                 setChatSessions={setChatSessions}
                 activeSessionId={activeSessionId}
                 setActiveSessionId={setActiveSessionId}
+                onConfirmBooking={handleConfirmBooking}
               />
             </div>
           </div>
@@ -620,7 +700,7 @@ export default function Dashboard() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-sky-50">
               <h3 className="font-bold text-gray-800 text-base flex items-center gap-2">
-                <History className="w-5 h-5 text-blue-600" /> Consultation History
+                <History className="w-5 h-5 text-blue-600" /> Chat History
               </h3>
             </div>
             <ChatHistoryTab
@@ -638,6 +718,158 @@ export default function Dashboard() {
   )
 }
 
+interface InlineBookingCardProps {
+  messageId: string
+  onConfirm: (
+    msgId: string,
+    doctorName: string,
+    date: string,
+    time: string,
+    reason: string
+  ) => Promise<void>
+}
+
+function InlineBookingCard({ messageId, onConfirm }: InlineBookingCardProps) {
+  const [selectedDoctor, setSelectedDoctor] = useState(DOCTORS[0].name)
+  const [bookingDate, setBookingDate] = useState('')
+  const [selectedTime, setSelectedTime] = useState('')
+  const [bookingReason, setBookingReason] = useState('')
+  const [errors, setErrors] = useState<{ date?: string; time?: string }>({})
+  const [submitting, setSubmitting] = useState(false)
+
+  const today = new Date().toISOString().split('T')[0]
+  const TIME_SLOTS = ['9:00 AM', '10:00 AM', '11:30 AM', '2:00 PM', '3:30 PM', '4:30 PM']
+
+  const selectedDocInfo = DOCTORS.find(d => d.name === selectedDoctor)
+
+  const handleConfirm = async () => {
+    const errs: { date?: string; time?: string } = {}
+    if (!bookingDate) errs.date = 'Select a date'
+    else if (bookingDate < today) errs.date = 'Date is in the past'
+    if (!selectedTime) errs.time = 'Select a time'
+
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs)
+      return
+    }
+
+    setErrors({})
+    setSubmitting(true)
+    try {
+      await onConfirm(messageId, selectedDoctor, bookingDate, selectedTime, bookingReason)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="mt-3 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-800 space-y-3.5 shadow-2xs max-w-full text-xs">
+      <div className="border-b border-slate-200 pb-2">
+        <p className="font-bold text-slate-900 flex items-center gap-1.5 text-[13px]">
+          <Calendar className="w-4 h-4 text-teal-600" /> Book an Appointment
+        </p>
+      </div>
+
+      {/* Doctor Dropdown */}
+      <div>
+        <label className="block text-[11px] font-bold text-slate-500 mb-1">Select Doctor</label>
+        <select
+          value={selectedDoctor}
+          onChange={e => setSelectedDoctor(e.target.value)}
+          className="w-full bg-white border border-slate-250 text-slate-800 rounded-xl px-3 py-2 text-xs outline-none focus:border-teal-500 transition-all cursor-pointer"
+        >
+          {DOCTORS.map(doc => (
+            <option key={doc.name} value={doc.name}>
+              {doc.name} ({doc.specialty})
+            </option>
+          ))}
+        </select>
+
+        {selectedDocInfo && (
+          <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-150 mt-1.5 text-[10px] text-slate-500">
+            <div className="w-7 h-7 rounded-full bg-teal-50 text-teal-700 font-extrabold flex items-center justify-center shrink-0">
+              {selectedDocInfo.avatar}
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="font-bold text-slate-700 truncate">{selectedDocInfo.name}</p>
+              <p className="text-[9px] text-slate-400 font-semibold">{selectedDocInfo.specialty} · {selectedDocInfo.exp}</p>
+            </div>
+            <span className="flex items-center gap-0.5 text-[9px] font-bold px-1 py-0.5 bg-amber-50 border border-amber-200 text-amber-600 rounded shrink-0">
+              ★ {selectedDocInfo.rating}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Date input */}
+      <div>
+        <label className="block text-[11px] font-bold text-slate-500 mb-1">Preferred Date</label>
+        <input
+          type="date"
+          min={today}
+          value={bookingDate}
+          onChange={e => {
+            setBookingDate(e.target.value)
+            setErrors(prev => ({ ...prev, date: undefined }))
+          }}
+          className={`w-full px-3 py-2 rounded-xl border outline-none bg-white cursor-pointer transition-all ${
+            errors.date ? 'border-red-400 focus:border-red-500' : 'border-slate-250 focus:border-teal-500'
+          }`}
+        />
+        {errors.date && <p className="mt-1 text-[9px] text-red-500">{errors.date}</p>}
+      </div>
+
+      {/* Time slots grid */}
+      <div>
+        <label className="block text-[11px] font-bold text-slate-500 mb-1.5">Available Slots</label>
+        <div className="grid grid-cols-3 gap-1.5">
+          {TIME_SLOTS.map(slot => (
+            <button
+              key={slot}
+              type="button"
+              onClick={() => {
+                setSelectedTime(slot)
+                setErrors(prev => ({ ...prev, time: undefined }))
+              }}
+              className={`py-1.5 text-[10px] font-bold rounded-lg border transition-all cursor-pointer ${
+                selectedTime === slot
+                  ? 'bg-teal-600 text-white border-teal-650 shadow-sm shadow-teal-200'
+                  : 'bg-white text-slate-655 border-slate-250 hover:border-teal-450 hover:text-teal-700 hover:bg-teal-50'
+              }`}
+            >
+              {slot}
+            </button>
+          ))}
+        </div>
+        {errors.time && <p className="mt-1 text-[9px] text-red-500">{errors.time}</p>}
+      </div>
+
+      {/* Reason textarea */}
+      <div>
+        <label className="block text-[11px] font-bold text-slate-500 mb-1">Consultation Details</label>
+        <textarea
+          rows={2}
+          placeholder="Reason for consultation..."
+          value={bookingReason}
+          onChange={e => setBookingReason(e.target.value)}
+          className="w-full bg-white border border-slate-250 text-slate-800 rounded-xl px-3 py-2 text-xs outline-none focus:border-teal-500 resize-none transition-all"
+        />
+      </div>
+
+      {/* Submit */}
+      <button
+        onClick={handleConfirm}
+        disabled={submitting}
+        className="w-full bg-teal-600 hover:bg-teal-750 disabled:opacity-50 text-white text-xs font-bold py-2 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+      >
+        {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Confirm Booking'}
+      </button>
+    </div>
+  )
+}
+
 // ── 1. AI Health Assistant Tab ────────────────────────────────────────────────
 interface ChatTabProps {
   messages: Message[]
@@ -645,6 +877,14 @@ interface ChatTabProps {
   setChatSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>
   activeSessionId: string | null
   setActiveSessionId: React.Dispatch<React.SetStateAction<string | null>>
+  onConfirmBooking: (
+    msgId: string,
+    doctorName: string,
+    date: string,
+    time: string,
+    reason: string,
+    isFloat: boolean
+  ) => Promise<void>
 }
 
 function AIHealthAssistantTab({
@@ -653,6 +893,7 @@ function AIHealthAssistantTab({
   setChatSessions,
   activeSessionId,
   setActiveSessionId,
+  onConfirmBooking,
 }: ChatTabProps) {
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -704,20 +945,27 @@ function AIHealthAssistantTab({
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
       const reply = await parseWebhookResponse(res)
+      const finalReply = isBookingTrigger(content)
+        ? `${reply}\n\n[BOOKING_SYSTEM]`
+        : reply
 
       setMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: reply,
+        content: finalReply,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }])
     } catch {
       setWebhookError(true)
       // Fallback
+      let reply = getResponse(content)
+      if (isBookingTrigger(content)) {
+        reply = "I can help you book an appointment right now. Please select a doctor, choose your preferred date & time, and confirm the booking below:\n\n[BOOKING_SYSTEM]"
+      }
       setMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: getResponse(content),
+        content: reply,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }])
     } finally {
@@ -783,12 +1031,24 @@ function AIHealthAssistantTab({
                 </div>
               )}
               <div className="max-w-[80%] sm:max-w-[70%]">
-                <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-xs ${
+                <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-xs ${
                   msg.role === 'user'
                     ? 'bg-teal-600 text-white rounded-tr-xs'
                     : 'bg-white text-slate-800 border border-slate-100 rounded-tl-xs'
                 }`}>
-                  {msg.content}
+                  {msg.content.includes('[BOOKING_SYSTEM]') ? (
+                    <div className="space-y-2 text-left">
+                      <p>{msg.content.replace('[BOOKING_SYSTEM]', '').trim()}</p>
+                      <InlineBookingCard
+                        messageId={msg.id}
+                        onConfirm={async (msgId, docName, date, time, reason) => {
+                          await onConfirmBooking(msgId, docName, date, time, reason, false)
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    msg.content
+                  )}
                 </div>
                 <p className={`text-[10px] text-slate-400 mt-1 ${msg.role === 'user' ? 'text-right' : ''}`}>{msg.time}</p>
               </div>
