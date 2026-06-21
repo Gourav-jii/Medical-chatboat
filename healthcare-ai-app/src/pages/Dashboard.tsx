@@ -60,6 +60,114 @@ function getResponse(input: string): string {
   return SAMPLE_RESPONSES.default
 }
 
+function extractWebhookReply(payload: unknown): string | null {
+  if (payload == null) return null
+
+  if (typeof payload === 'string') {
+    const trimmed = payload.trim()
+    return trimmed.length > 0 ? trimmed : null
+  }
+
+  if (typeof payload === 'number' || typeof payload === 'boolean' || typeof payload === 'bigint') {
+    return String(payload)
+  }
+
+  if (Array.isArray(payload)) {
+    for (const item of payload) {
+      const reply = extractWebhookReply(item)
+      if (reply) return reply
+    }
+    return null
+  }
+
+  if (typeof payload === 'object') {
+    const record = payload as Record<string, unknown>
+    const keys = [
+      'output',
+      'message',
+      'response',
+      'text',
+      'reply',
+      'answer',
+      'content',
+      'choices',
+      'data',
+      'result',
+      'body',
+      'json',
+      'payload',
+    ]
+
+    for (const key of keys) {
+      const reply = extractWebhookReply(record[key])
+      if (reply) return reply
+    }
+  }
+
+  return null
+}
+
+async function parseWebhookResponse(res: Response): Promise<string> {
+  const raw = await res.text()
+  const trimmed = raw.trim()
+
+  if (!res.ok) {
+    throw new Error(trimmed || `HTTP ${res.status}`)
+  }
+
+  if (!trimmed) {
+    throw new Error('Empty response from webhook')
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed)
+    return extractWebhookReply(parsed) ?? trimmed
+  } catch {
+    return trimmed
+  }
+}
+
+function buildWebhookPayload(content: string) {
+  return {
+    message: content,
+    chatInput: content,
+    input: content,
+    text: content,
+    query: content,
+    prompt: content,
+  }
+}
+
+const CONFIGURED_WEBHOOK_URL = import.meta.env.VITE_WEBHOOK_URL?.trim()
+const DEFAULT_WEBHOOK_URL = import.meta.env.DEV
+  ? '/webhook-test/medical-chatbot'
+  : '/webhook/medical-chatbot'
+
+function toProxiedPath(url: string): string {
+  try {
+    const parsed = new URL(url)
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`
+  } catch {
+    return url
+  }
+}
+
+const WEBHOOK_URL = (() => {
+  if (!CONFIGURED_WEBHOOK_URL) return DEFAULT_WEBHOOK_URL
+
+  if (import.meta.env.DEV) {
+    return CONFIGURED_WEBHOOK_URL.startsWith('http')
+      ? toProxiedPath(CONFIGURED_WEBHOOK_URL)
+      : CONFIGURED_WEBHOOK_URL
+  }
+
+  if (import.meta.env.PROD && CONFIGURED_WEBHOOK_URL.includes('/webhook-test/')) {
+    return CONFIGURED_WEBHOOK_URL.replace('/webhook-test/', '/webhook/')
+  }
+
+  return CONFIGURED_WEBHOOK_URL
+})()
+
 const DOCTORS = [
   { name: 'Dr. Emily Chen', specialty: 'Cardiologist', avatar: 'EC', rating: '4.9', exp: '12 years', clinic: 'MediAI Cardiology, Suite A', available: 'Tomorrow' },
   { name: 'Dr. Marcus Rivera', specialty: 'General Practitioner', avatar: 'MR', rating: '4.8', exp: '10 years', clinic: 'Primary Care Center, Room 102', available: 'Today' },
@@ -227,13 +335,12 @@ export default function Dashboard() {
     setFloatInput('')
     setFloatTyping(true)
     try {
-      const res = await fetch('/webhook-test/medical-chatbot', {
+      const res = await fetch(WEBHOOK_URL, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: content }),
+        body: JSON.stringify(buildWebhookPayload(content)),
       })
       if (!res.ok) throw new Error('fail')
-      const data = await res.json()
-      const reply: string = data?.output ?? data?.message ?? data?.response ?? data?.text ?? data?.reply ?? (typeof data === 'string' ? data : null) ?? getResponse(content)
+      const reply = await parseWebhookResponse(res)
       setFloatMsgs(prev => [...prev, { id: (Date.now()+1).toString(), role: 'assistant', content: reply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])
     } catch {
       setFloatMsgs(prev => [...prev, { id: (Date.now()+1).toString(), role: 'assistant', content: getResponse(content), time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])
@@ -556,8 +663,6 @@ function AIHealthAssistantTab({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isTyping])
 
-  const WEBHOOK_URL = '/webhook-test/medical-chatbot'
-
   const sendMessage = async (text?: string) => {
     const content = (text ?? input).trim()
     if (!content) return
@@ -593,20 +698,12 @@ function AIHealthAssistantTab({
       const res = await fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: content }),
+        body: JSON.stringify(buildWebhookPayload(content)),
       })
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
-      const data = await res.json()
-      const reply: string =
-        data?.output ??
-        data?.message ??
-        data?.response ??
-        data?.text ??
-        data?.reply ??
-        (typeof data === 'string' ? data : null) ??
-        'I received your message but could not parse the response. Please try again.'
+      const reply = await parseWebhookResponse(res)
 
       setMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),

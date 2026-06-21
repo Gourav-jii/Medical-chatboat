@@ -6,9 +6,13 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      // Proxies /webhook-test/* → http://localhost:5678
-      // This avoids CORS errors when calling the n8n webhook from the browser
+      // Proxies n8n test and production webhooks to local n8n during development.
       '/webhook-test': {
+        target: 'http://localhost:5678',
+        changeOrigin: true,
+        rewrite: (path) => path, // keep path as-is
+      },
+      '/webhook': {
         target: 'http://localhost:5678',
         changeOrigin: true,
         rewrite: (path) => path, // keep path as-is
