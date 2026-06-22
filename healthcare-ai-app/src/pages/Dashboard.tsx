@@ -6,7 +6,8 @@ import {
   Heart, Send, Bot, User as UserIcon, LogOut, X, MessageCircle,
   Activity, Calendar, Home,
   ChevronRight, Paperclip, AlertTriangle, CheckCircle,
-  Clock, Shield, Star, Loader2, Stethoscope, History, Search, Info, Plus
+  Clock, Shield, Star, Loader2, Stethoscope, History, Search, Info, Plus,
+  Sparkles, Pill, AlertCircle
 } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -181,12 +182,14 @@ const WEBHOOK_URL = (() => {
 })()
 
 const DOCTORS = [
-  { name: 'Dr. Emily Chen', specialty: 'Cardiologist', avatar: 'EC', rating: '4.9', exp: '12 years', clinic: 'MediAI Cardiology, Suite A', available: 'Tomorrow' },
-  { name: 'Dr. Marcus Rivera', specialty: 'General Practitioner', avatar: 'MR', rating: '4.8', exp: '10 years', clinic: 'Primary Care Center, Room 102', available: 'Today' },
-  { name: 'Dr. Priya Nair', specialty: 'Dermatologist', avatar: 'PN', rating: '4.7', exp: '8 years', clinic: 'Skin & Allergy Clinic, Suite B', available: 'Thursday' },
-  { name: 'Dr. James Wu', specialty: 'Neurologist', avatar: 'JW', rating: '4.9', exp: '15 years', clinic: 'Neurosciences Dept, Floor 3', available: 'Tomorrow' },
-  { name: 'Dr. Aisha Patel', specialty: 'Endocrinologist', avatar: 'AP', rating: '4.8', exp: '9 years', clinic: 'Diabetes Care Center, Room 204', available: 'Friday' },
-  { name: 'Dr. Kevin Lee', specialty: 'Orthopedist', avatar: 'KL', rating: '4.6', exp: '11 years', clinic: 'Joint & Bone Clinic, Suite C', available: 'Today' },
+  { name: 'Dr. Rajesh Sharma', specialty: 'Cardiologist', avatar: 'RS', rating: '4.9', exp: '15 years', clinic: 'Metro Hospital, Cardiology Dept', available: 'Today' },
+  { name: 'Dr. Priya Verma', specialty: 'Endocrinologist', avatar: 'PV', rating: '4.8', exp: '12 years', clinic: 'Fortis Clinic, Endocrinology Dept', available: 'Tomorrow' },
+  { name: 'Dr. Amit Kumar', specialty: 'Pulmonologist', avatar: 'AK', rating: '4.7', exp: '10 years', clinic: 'Apollo Hospital, Pulmonology Dept', available: 'Wednesday' },
+  { name: 'Dr. Neha Singh', specialty: 'Neurologist', avatar: 'NS', rating: '4.9', exp: '14 years', clinic: 'Max Hospital, Neurology Dept', available: 'Tomorrow' },
+  { name: 'Dr. Vikram Patel', specialty: 'Gastroenterologist', avatar: 'VP', rating: '4.8', exp: '13 years', clinic: 'Care Hospital, Gastroenterology Dept', available: 'Today' },
+  { name: 'Dr. Anjali Gupta', specialty: 'Dermatologist', avatar: 'AG', rating: '4.6', exp: '9 years', clinic: 'Skin Health Center, Dermatology Dept', available: 'Thursday' },
+  { name: 'Dr. Rohit Mehta', specialty: 'Nephrologist', avatar: 'RM', rating: '4.7', exp: '11 years', clinic: 'Nephron Care, Nephrology Dept', available: 'Friday' },
+  { name: 'Dr. Sneha Joshi', specialty: 'Psychiatrist', avatar: 'SJ', rating: '4.8', exp: '8 years', clinic: 'Mind & Care Clinic, Psychiatry Dept', available: 'Today' },
 ]
 
 const MEDICINES_DB = [
@@ -208,9 +211,9 @@ void MEDICINES_DB
 void INITIAL_MEDICATIONS
 
 const INITIAL_APPOINTMENTS: Appointment[] = [
-  { doctor: 'Dr. Emily Chen', specialty: 'Cardiologist', date: 'Jun 24, 2026', time: '10:00 AM', status: 'upcoming', avatar: 'EC' },
-  { doctor: 'Dr. Marcus Rivera', specialty: 'General Practitioner', date: 'Jul 2, 2026', time: '2:30 PM', status: 'upcoming', avatar: 'MR' },
-  { doctor: 'Dr. Priya Nair', specialty: 'Dermatologist', date: 'Jun 10, 2026', time: '9:00 AM', status: 'completed', avatar: 'PN' },
+  { doctor: 'Dr. Rajesh Sharma', specialty: 'Cardiologist', date: 'Jun 24, 2026', time: '10:00 AM', status: 'upcoming', avatar: 'RS' },
+  { doctor: 'Dr. Neha Singh', specialty: 'Neurologist', date: 'Jul 2, 2026', time: '2:30 PM', status: 'upcoming', avatar: 'NS' },
+  { doctor: 'Dr. Anjali Gupta', specialty: 'Dermatologist', date: 'Jun 10, 2026', time: '9:00 AM', status: 'completed', avatar: 'AG' },
 ]
 
 const INITIAL_CHAT_SESSIONS: ChatSession[] = [
@@ -219,7 +222,7 @@ const INITIAL_CHAT_SESSIONS: ChatSession[] = [
     title: 'Headache & dizziness',
     preview: 'Could be tension-related...',
     time: '2 hours ago',
-    icon: '🤕',
+    icon: 'headache',
     messages: [
       { id: 'c1_1', role: 'user', content: 'I have a headache since morning and feel a bit dizzy.', time: '2 hours ago' },
       { id: 'c1_2', role: 'assistant', content: 'Headaches can have many causes including tension, dehydration, stress, or eye strain. For a persistent headache lasting more than 2 days, I recommend consulting a neurologist. Try staying hydrated, resting in a dark room, and avoiding screens. Do you have any other symptoms like nausea or light sensitivity?', time: '2 hours ago' }
@@ -230,7 +233,7 @@ const INITIAL_CHAT_SESSIONS: ChatSession[] = [
     title: 'Blood pressure query',
     preview: '118/76 is in the normal range...',
     time: 'Yesterday',
-    icon: '💓',
+    icon: 'bp',
     messages: [
       { id: 'c2_1', role: 'user', content: 'My blood pressure reading today was 118/76. Is that good?', time: 'Yesterday' },
       { id: 'c2_2', role: 'assistant', content: 'Your recent blood pressure reading of 118/76 mmHg is within the normal range. Keep maintaining a low-sodium diet, regular exercise, and your current medication schedule. I\'ll remind you for your next check-up.', time: 'Yesterday' }
@@ -241,7 +244,7 @@ const INITIAL_CHAT_SESSIONS: ChatSession[] = [
     title: 'Medication schedule',
     preview: 'Take Lisinopril once daily...',
     time: '2 days ago',
-    icon: '💊',
+    icon: 'meds',
     messages: [
       { id: 'c3_1', role: 'user', content: 'When should I take my Lisinopril medication?', time: '2 days ago' },
       { id: 'c3_2', role: 'assistant', content: 'I can help you understand your medications. Please note that I provide general information — always follow your prescriber\'s specific instructions. Lisinopril is typically taken once daily, in the morning. Would you like information about dosing schedules, potential interactions, or side effects?', time: '2 days ago' }
@@ -250,12 +253,25 @@ const INITIAL_CHAT_SESSIONS: ChatSession[] = [
 ]
 
 const NAV_ITEMS = [
-  { icon: Home, label: 'Overview', id: 'home' },
-  { icon: Bot, label: 'AI Assistant', id: 'ai-assistant' },
+  { icon: Home, label: 'Home', id: 'home' },
   { icon: Stethoscope, label: 'Symptom Checker', id: 'symptom-checker' },
   { icon: Heart, label: 'Doctor Recommendations', id: 'doctor-recommendations' },
   { icon: History, label: 'Chat History', id: 'chat-history' },
 ]
+
+function renderSessionIcon(icon: string) {
+  switch (icon) {
+    case 'headache':
+      return <AlertCircle className="w-5 h-5 text-purple-550 shrink-0" />
+    case 'bp':
+      return <Heart className="w-5 h-5 text-rose-500 fill-current shrink-0" />
+    case 'meds':
+      return <Pill className="w-5 h-5 text-blue-600 shrink-0" />
+    case 'chat':
+    default:
+      return <MessageCircle className="w-5 h-5 text-blue-600 shrink-0" fill="currentColor" />
+  }
+}
 
 // ── Main Dashboard Component ──────────────────────────────────────────────────
 export default function Dashboard() {
@@ -265,14 +281,37 @@ export default function Dashboard() {
   const [suggestedSpecialty, setSuggestedSpecialty] = useState<string | null>(null)
 
   // Lifted States
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1', role: 'assistant',
-      content: "Hello! I'm your MediAI assistant. You can describe symptoms or get help preparing for appointments. How can I help you today?",
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    },
-  ])
-  const [chatSessions, setChatSessions] = useState<ChatSession[]>(INITIAL_CHAT_SESSIONS)
+  const storageKey = `mediAssistChatSessions_${user?.email || 'default'}`
+  
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>(() => {
+    const saved = localStorage.getItem(storageKey)
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch (e) {
+        return INITIAL_CHAT_SESSIONS
+      }
+    }
+    return INITIAL_CHAT_SESSIONS
+  })
+
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey)
+    if (saved) {
+      try {
+        setChatSessions(JSON.parse(saved))
+      } catch (e) {
+        setChatSessions(INITIAL_CHAT_SESSIONS)
+      }
+    } else {
+      setChatSessions(INITIAL_CHAT_SESSIONS)
+    }
+    setActiveSessionId(null)
+  }, [storageKey])
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(chatSessions))
+  }, [chatSessions, storageKey])
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   
   const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS)
@@ -282,14 +321,13 @@ export default function Dashboard() {
     doctorName: string,
     date: string,
     time: string,
-    reason: string,
-    isFloat: boolean
+    reason: string
   ) => {
     // 1. Simulate API delay
     await new Promise((r) => setTimeout(r, 800))
 
     // 2. Find doctor info
-    const doc = DOCTORS.find((d) => d.name === doctorName) || { avatar: 'MD', specialty: 'General Practitioner' }
+    const doc = DOCTORS.find((d) => d.name === doctorName) || { avatar: 'MD', specialty: 'Cardiologist' }
 
     // 3. Format date
     const dateObj = new Date(date + 'T00:00:00')
@@ -314,13 +352,25 @@ export default function Dashboard() {
     // 7. Update message text in chat
     const successText = `✓ **Appointment Booked Successfully!**\n\n**Doctor:** ${doctorName} (${doc.specialty})\n**Date:** ${formattedDate}\n**Time:** ${time}\n**Reason:** ${reason || 'General consultation'}\n\nConfirmation sent. You can view this booking in your overview dashboard.`
 
-    if (isFloat) {
-      setFloatMsgs((prev) =>
-        prev.map((m) => (m.id === msgId ? { ...m, content: successText } : m))
-      )
-    } else {
-      setMessages((prev) =>
-        prev.map((m) => (m.id === msgId ? { ...m, content: successText } : m))
+    setFloatMsgs((prev) =>
+      prev.map((m) => (m.id === msgId ? { ...m, content: successText } : m))
+    )
+
+    if (activeSessionId) {
+      setChatSessions((prev) =>
+        prev.map((s) => {
+          if (s.id === activeSessionId) {
+            const updatedMsgs = s.messages.map((m) =>
+              m.id === msgId ? { ...m, content: successText } : m
+            )
+            return {
+              ...s,
+              messages: updatedMsgs,
+              preview: '✓ Appointment Booked Successfully!',
+            }
+          }
+          return s
+        })
       )
     }
   }
@@ -328,28 +378,10 @@ export default function Dashboard() {
   const initials = user?.name
     ?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() ?? 'U'
 
-  // Sync active session's messages to the chatSessions database when messages change
-  useEffect(() => {
-    if (activeSessionId) {
-      setChatSessions((prev) =>
-        prev.map((s) => {
-          if (s.id === activeSessionId) {
-            return {
-              ...s,
-              messages: messages,
-              preview: messages[messages.length - 1]?.content.slice(0, 40) + '...'
-            }
-          }
-          return s
-        })
-      )
-    }
-  }, [messages, activeSessionId])
-
   // Scroll tracking to update the active navigation tab
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['home', 'ai-assistant', 'symptom-checker', 'doctor-recommendations', 'chat-history']
+      const sections = ['home', 'symptom-checker', 'doctor-recommendations', 'chat-history']
       const scrollPos = window.scrollY + 200 // Offset for header height
 
       for (const section of sections) {
@@ -383,14 +415,53 @@ export default function Dashboard() {
   const [floatInput, setFloatInput] = useState('')
   const [floatTyping, setFloatTyping] = useState(false)
   const floatEndRef = useRef<HTMLDivElement>(null)
+  const isFirstFloatRender = useRef(true)
 
-  useEffect(() => { floatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [floatMsgs, floatTyping])
+  useEffect(() => {
+    if (isFirstFloatRender.current) {
+      isFirstFloatRender.current = false
+      return
+    }
+    floatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [floatMsgs, floatTyping])
 
   const sendFloatMsg = async (text?: string) => {
     const content = (text ?? floatInput).trim()
     if (!content) return
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', content, time }
+    const userMsgId = Date.now().toString()
+    const userMsg: Message = { id: userMsgId, role: 'user', content, time }
+
+    // Synchronize to chat history
+    let currentSessionId = activeSessionId
+    if (!currentSessionId) {
+      const newSessionId = 's_' + Date.now()
+      const newSession: ChatSession = {
+        id: newSessionId,
+        title: content.length > 28 ? content.slice(0, 25) + '...' : content,
+        preview: content.slice(0, 40) + '...',
+        time: 'Just now',
+        icon: 'chat',
+        messages: [...floatMsgs, userMsg]
+      }
+      setChatSessions((prev) => [newSession, ...prev])
+      setActiveSessionId(newSessionId)
+      currentSessionId = newSessionId
+    } else {
+      setChatSessions((prev) =>
+        prev.map((s) => {
+          if (s.id === currentSessionId) {
+            return {
+              ...s,
+              messages: [...s.messages, userMsg],
+              preview: content.slice(0, 40) + '...'
+            }
+          }
+          return s
+        })
+      )
+    }
+
     setFloatMsgs(prev => [...prev, userMsg])
     setFloatInput('')
     setFloatTyping(true)
@@ -404,20 +475,46 @@ export default function Dashboard() {
       const finalReply = isBookingTrigger(content)
         ? `${reply}\n\n[BOOKING_SYSTEM]`
         : reply
-      setFloatMsgs(prev => [...prev, { id: (Date.now()+1).toString(), role: 'assistant', content: finalReply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])
+      const botMsg: Message = { id: (Date.now()+1).toString(), role: 'assistant', content: finalReply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+      setFloatMsgs(prev => [...prev, botMsg])
+      setChatSessions((prev) =>
+        prev.map((s) => {
+          if (s.id === currentSessionId) {
+            return {
+              ...s,
+              messages: [...s.messages, botMsg],
+              preview: finalReply.slice(0, 40) + '...'
+            }
+          }
+          return s
+        })
+      )
     } catch {
       let reply = getResponse(content)
       if (isBookingTrigger(content)) {
         reply = "I can help you book an appointment right now. Please select a doctor, choose your preferred date & time, and confirm the booking below:\n\n[BOOKING_SYSTEM]"
       }
-      setFloatMsgs(prev => [...prev, { id: (Date.now()+1).toString(), role: 'assistant', content: reply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }])
+      const botMsg: Message = { id: (Date.now()+1).toString(), role: 'assistant', content: reply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+      setFloatMsgs(prev => [...prev, botMsg])
+      setChatSessions((prev) =>
+        prev.map((s) => {
+          if (s.id === currentSessionId) {
+            return {
+              ...s,
+              messages: [...s.messages, botMsg],
+              preview: reply.slice(0, 40) + '...'
+            }
+          }
+          return s
+        })
+      )
     } finally {
       setFloatTyping(false)
     }
   }
 
   const startNewChat = () => {
-    setMessages([
+    setFloatMsgs([
       {
         id: Date.now().toString(), role: 'assistant',
         content: "New session started. How can I help you today?",
@@ -425,18 +522,18 @@ export default function Dashboard() {
       }
     ])
     setActiveSessionId(null)
-    scrollToSection('ai-assistant')
+    setShowFloatingChat(true)
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#eef6ff_100%)] text-slate-900 font-sans">
 
       {/* ── FIXED TOP HEADER ─────────────────────────────────── */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-teal-600 via-teal-500 to-cyan-500 shadow-lg px-4 sm:px-8 h-16 flex items-center justify-between">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 via-blue-500 to-emerald-500 shadow-lg px-4 sm:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-md">
-            <Heart className="w-5 h-5 text-teal-600" fill="currentColor" />
+            <Heart className="w-5 h-5 text-blue-600" fill="currentColor" />
           </div>
           <span className="text-white font-extrabold text-xl tracking-tight">MediAI</span>
         </div>
@@ -449,7 +546,7 @@ export default function Dashboard() {
               onClick={() => scrollToSection(id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 activeSection === id
-                  ? 'bg-white text-teal-700 shadow-sm'
+                  ? 'bg-white text-blue-700 shadow-sm'
                   : 'text-white/90 hover:bg-white/20'
               }`}
             >
@@ -462,15 +559,15 @@ export default function Dashboard() {
         {/* User + Sign out */}
         <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center gap-2.5 bg-white/20 border border-white/30 rounded-2xl px-3 py-1.5">
-            <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-teal-700 text-xs font-extrabold shadow-sm">
+            <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-blue-700 text-xs font-extrabold shadow-sm">
               {initials}
             </div>
             <div className="text-left">
               <p className="text-white text-xs font-bold leading-none">{user?.name}</p>
-              <p className="text-teal-100 text-[10px] mt-0.5">{user?.role ?? 'Patient'}</p>
+              <p className="text-blue-100 text-[10px] mt-0.5">{user?.role ?? 'Patient'}</p>
             </div>
           </div>
-          <div className="md:hidden w-8 h-8 rounded-xl bg-white flex items-center justify-center text-teal-700 text-xs font-extrabold shadow-sm">
+          <div className="md:hidden w-8 h-8 rounded-xl bg-white flex items-center justify-center text-blue-700 text-xs font-extrabold shadow-sm">
             {initials}
           </div>
           <button
@@ -493,7 +590,7 @@ export default function Dashboard() {
             key={id}
             onClick={() => scrollToSection(id)}
             className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl transition-all cursor-pointer ${
-              activeSection === id ? 'text-teal-600 bg-teal-50' : 'text-gray-400'
+              activeSection === id ? 'text-blue-600 bg-blue-50' : 'text-gray-400'
             }`}
           >
             <Icon className="w-5 h-5" />
@@ -510,19 +607,19 @@ export default function Dashboard() {
           <div className="w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden" style={{ height: '480px' }}>
 
             {/* Header */}
-            <div className="bg-gradient-to-r from-teal-600 to-cyan-500 px-4 py-3 flex items-center justify-between shrink-0">
+            <div className="bg-gradient-to-r from-blue-600 to-emerald-500 px-4 py-3 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                   <MessageCircle className="w-4 h-4 text-white" fill="white" />
                 </div>
                 <div>
                   <p className="text-white text-xs font-bold leading-none">MediAI Assistant</p>
-                  <p className="text-teal-100 text-[10px] mt-0.5 flex items-center gap-1">
+                  <p className="text-blue-100 text-[10px] mt-0.5 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 bg-green-300 rounded-full inline-block"></span> Online
                   </p>
                 </div>
               </div>
-              <button onClick={() => setShowFloatingChat(false)} className="w-7 h-7 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white cursor-pointer transition-colors">
+              <button onClick={() => setShowFloatingChat(false)} className="w-7 h-7 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white cursor-pointer transition-colors outline-none focus:outline-none">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -532,13 +629,13 @@ export default function Dashboard() {
               {floatMsgs.map(msg => (
                 <div key={msg.id} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {msg.role === 'assistant' && (
-                    <div className="w-7 h-7 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-full flex items-center justify-center shrink-0 mt-0.5">
                       <MessageCircle className="w-3.5 h-3.5 text-white" fill="white" />
                     </div>
                   )}
                   <div className={`max-w-[78%] px-3 py-2 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap ${
                     msg.role === 'user'
-                      ? 'bg-teal-600 text-white rounded-tr-sm'
+                      ? 'bg-blue-600 text-white rounded-tr-sm'
                       : 'bg-white text-gray-700 border border-gray-200 rounded-tl-sm shadow-sm'
                   }`}>
                     {msg.content.includes('[BOOKING_SYSTEM]') ? (
@@ -547,7 +644,7 @@ export default function Dashboard() {
                         <InlineBookingCard
                           messageId={msg.id}
                           onConfirm={async (msgId, docName, date, time, reason) => {
-                            await handleConfirmBooking(msgId, docName, date, time, reason, true)
+                            await handleConfirmBooking(msgId, docName, date, time, reason)
                           }}
                         />
                       </div>
@@ -564,11 +661,11 @@ export default function Dashboard() {
               ))}
               {floatTyping && (
                 <div className="flex gap-2 items-end">
-                  <div className="w-7 h-7 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-full flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-full flex items-center justify-center shrink-0">
                     <MessageCircle className="w-3.5 h-3.5 text-white" fill="white" />
                   </div>
                   <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-3 py-2.5 flex gap-1 items-center shadow-sm">
-                    {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />)}
+                    {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />)}
                   </div>
                 </div>
               )}
@@ -581,7 +678,7 @@ export default function Dashboard() {
                 <button
                   key={chip}
                   onClick={() => sendFloatMsg(chip)}
-                  className="text-[10px] font-semibold whitespace-nowrap bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 px-2.5 py-1 rounded-full cursor-pointer transition-colors shrink-0"
+                  className="text-[10px] font-semibold whitespace-nowrap bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full cursor-pointer transition-colors shrink-0"
                 >
                   {chip}
                 </button>
@@ -590,7 +687,7 @@ export default function Dashboard() {
 
             {/* Input */}
             <div className="px-3 py-3 border-t border-gray-100 bg-white shrink-0">
-              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-2xl px-3 py-2 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-400/20 transition-all">
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-2xl px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-400/20 transition-all">
                 <input
                   type="text"
                   value={floatInput}
@@ -602,7 +699,7 @@ export default function Dashboard() {
                 <button
                   onClick={() => sendFloatMsg()}
                   disabled={!floatInput.trim()}
-                  className="w-7 h-7 bg-teal-600 hover:bg-teal-700 disabled:opacity-40 text-white rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                  className="w-7 h-7 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-full flex items-center justify-center transition-colors cursor-pointer shrink-0"
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>
@@ -615,7 +712,7 @@ export default function Dashboard() {
         {/* ── FAB Button with chat bubble icon ── */}
         <button
           onClick={() => setShowFloatingChat(!showFloatingChat)}
-          className="w-14 h-14 bg-gradient-to-br from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 rounded-full shadow-2xl flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 relative"
+          className="w-14 h-14 bg-gradient-to-br from-blue-500 to-emerald-600 hover:from-blue-600 hover:to-emerald-700 rounded-full shadow-2xl flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 relative"
           title="Chat with MediAI"
         >
           {showFloatingChat
@@ -638,30 +735,11 @@ export default function Dashboard() {
             scrollToSection={scrollToSection}
             appointments={appointments}
             chatSessions={chatSessions}
+            setShowFloatingChat={setShowFloatingChat}
           />
         </section>
 
-        {/* AI Health Assistant Section */}
-        <section id="ai-assistant" className="scroll-mt-20">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-[600px] flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-teal-50 to-cyan-50">
-              <h3 className="font-bold text-gray-800 text-base flex items-center gap-2">
-                <Bot className="w-5 h-5 text-teal-600" /> AI Health Assistant
-              </h3>
-              <span className="text-xs text-teal-700 bg-teal-100 border border-teal-200 px-3 py-1 rounded-full font-semibold">● Live</span>
-            </div>
-            <div className="flex-1 min-h-0">
-              <AIHealthAssistantTab
-                messages={messages}
-                setMessages={setMessages}
-                setChatSessions={setChatSessions}
-                activeSessionId={activeSessionId}
-                setActiveSessionId={setActiveSessionId}
-                onConfirmBooking={handleConfirmBooking}
-              />
-            </div>
-          </div>
-        </section>
+
 
         {/* Symptom Checker Section */}
         <section id="symptom-checker" className="scroll-mt-20">
@@ -706,9 +784,10 @@ export default function Dashboard() {
             <ChatHistoryTab
               chatSessions={chatSessions}
               setChatSessions={setChatSessions}
-              setMessages={setMessages}
+              setFloatMsgs={setFloatMsgs}
+              activeSessionId={activeSessionId}
               setActiveSessionId={setActiveSessionId}
-              scrollToSection={scrollToSection}
+              setShowFloatingChat={setShowFloatingChat}
               startNewChat={startNewChat}
             />
           </div>
@@ -768,7 +847,7 @@ function InlineBookingCard({ messageId, onConfirm }: InlineBookingCardProps) {
     <div className="mt-3 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-800 space-y-3.5 shadow-2xs max-w-full text-xs">
       <div className="border-b border-slate-200 pb-2">
         <p className="font-bold text-slate-900 flex items-center gap-1.5 text-[13px]">
-          <Calendar className="w-4 h-4 text-teal-600" /> Book an Appointment
+          <Calendar className="w-4 h-4 text-blue-600" /> Book an Appointment
         </p>
       </div>
 
@@ -778,7 +857,7 @@ function InlineBookingCard({ messageId, onConfirm }: InlineBookingCardProps) {
         <select
           value={selectedDoctor}
           onChange={e => setSelectedDoctor(e.target.value)}
-          className="w-full bg-white border border-slate-250 text-slate-800 rounded-xl px-3 py-2 text-xs outline-none focus:border-teal-500 transition-all cursor-pointer"
+          className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition-all cursor-pointer"
         >
           {DOCTORS.map(doc => (
             <option key={doc.name} value={doc.name}>
@@ -789,7 +868,7 @@ function InlineBookingCard({ messageId, onConfirm }: InlineBookingCardProps) {
 
         {selectedDocInfo && (
           <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-150 mt-1.5 text-[10px] text-slate-500">
-            <div className="w-7 h-7 rounded-full bg-teal-50 text-teal-700 font-extrabold flex items-center justify-center shrink-0">
+            <div className="w-7 h-7 rounded-full bg-blue-50 text-blue-700 font-extrabold flex items-center justify-center shrink-0">
               {selectedDocInfo.avatar}
             </div>
             <div className="flex-1 min-w-0 text-left">
@@ -815,7 +894,7 @@ function InlineBookingCard({ messageId, onConfirm }: InlineBookingCardProps) {
             setErrors(prev => ({ ...prev, date: undefined }))
           }}
           className={`w-full px-3 py-2 rounded-xl border outline-none bg-white cursor-pointer transition-all ${
-            errors.date ? 'border-red-400 focus:border-red-500' : 'border-slate-250 focus:border-teal-500'
+            errors.date ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-blue-500'
           }`}
         />
         {errors.date && <p className="mt-1 text-[9px] text-red-500">{errors.date}</p>}
@@ -835,8 +914,8 @@ function InlineBookingCard({ messageId, onConfirm }: InlineBookingCardProps) {
               }}
               className={`py-1.5 text-[10px] font-bold rounded-lg border transition-all cursor-pointer ${
                 selectedTime === slot
-                  ? 'bg-teal-600 text-white border-teal-650 shadow-sm shadow-teal-200'
-                  : 'bg-white text-slate-655 border-slate-250 hover:border-teal-450 hover:text-teal-700 hover:bg-teal-50'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-200'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-700 hover:bg-blue-50'
               }`}
             >
               {slot}
@@ -854,7 +933,7 @@ function InlineBookingCard({ messageId, onConfirm }: InlineBookingCardProps) {
           placeholder="Reason for consultation..."
           value={bookingReason}
           onChange={e => setBookingReason(e.target.value)}
-          className="w-full bg-white border border-slate-250 text-slate-800 rounded-xl px-3 py-2 text-xs outline-none focus:border-teal-500 resize-none transition-all"
+          className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 resize-none transition-all"
         />
       </div>
 
@@ -862,7 +941,7 @@ function InlineBookingCard({ messageId, onConfirm }: InlineBookingCardProps) {
       <button
         onClick={handleConfirm}
         disabled={submitting}
-        className="w-full bg-teal-600 hover:bg-teal-750 disabled:opacity-50 text-white text-xs font-bold py-2 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold py-2 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
       >
         {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Confirm Booking'}
       </button>
@@ -887,7 +966,7 @@ interface ChatTabProps {
   ) => Promise<void>
 }
 
-function AIHealthAssistantTab({
+export function AIHealthAssistantTab({
   messages,
   setMessages,
   setChatSessions,
@@ -899,8 +978,13 @@ function AIHealthAssistantTab({
   const [isTyping, setIsTyping] = useState(false)
   const [webhookError, setWebhookError] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const isFirstRender = useRef(true)
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isTyping])
 
@@ -920,14 +1004,27 @@ function AIHealthAssistantTab({
       const newSession: ChatSession = {
         id: newSessionId,
         title: content.length > 28 ? content.slice(0, 25) + '...' : content,
-        preview: 'Waiting for AI response...',
+        preview: content.slice(0, 40) + '...',
         time: 'Just now',
-        icon: '💬',
-        messages: [userMsg]
+        icon: 'chat',
+        messages: [...messages, userMsg]
       }
       setChatSessions((prev) => [newSession, ...prev])
       setActiveSessionId(newSessionId)
       currentSessionId = newSessionId
+    } else {
+      setChatSessions((prev) =>
+        prev.map((s) => {
+          if (s.id === currentSessionId) {
+            return {
+              ...s,
+              messages: [...s.messages, userMsg],
+              preview: content.slice(0, 40) + '...'
+            }
+          }
+          return s
+        })
+      )
     }
 
     setMessages((prev) => [...prev, userMsg])
@@ -949,12 +1046,26 @@ function AIHealthAssistantTab({
         ? `${reply}\n\n[BOOKING_SYSTEM]`
         : reply
 
-      setMessages((prev) => [...prev, {
+      const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: finalReply,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      }])
+      }
+
+      setMessages((prev) => [...prev, botMsg])
+      setChatSessions((prev) =>
+        prev.map((s) => {
+          if (s.id === currentSessionId) {
+            return {
+              ...s,
+              messages: [...s.messages, botMsg],
+              preview: finalReply.slice(0, 40) + '...'
+            }
+          }
+          return s
+        })
+      )
     } catch {
       setWebhookError(true)
       // Fallback
@@ -962,12 +1073,26 @@ function AIHealthAssistantTab({
       if (isBookingTrigger(content)) {
         reply = "I can help you book an appointment right now. Please select a doctor, choose your preferred date & time, and confirm the booking below:\n\n[BOOKING_SYSTEM]"
       }
-      setMessages((prev) => [...prev, {
+      const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: reply,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      }])
+      }
+
+      setMessages((prev) => [...prev, botMsg])
+      setChatSessions((prev) =>
+        prev.map((s) => {
+          if (s.id === currentSessionId) {
+            return {
+              ...s,
+              messages: [...s.messages, botMsg],
+              preview: reply.slice(0, 40) + '...'
+            }
+          }
+          return s
+        })
+      )
     } finally {
       setIsTyping(false)
     }
@@ -987,8 +1112,8 @@ function AIHealthAssistantTab({
   return (
     <div className="flex flex-col h-full bg-slate-50 relative">
       {/* HIPAA / Security Notice */}
-      <div className="bg-teal-50 border-b border-teal-100 px-5 py-2 flex items-center gap-2 text-xs text-teal-700 shrink-0 font-medium">
-        <Shield className="w-3.5 h-3.5 shrink-0 text-teal-600" />
+      <div className="bg-blue-50 border-b border-blue-100 px-5 py-2 flex items-center gap-2 text-xs text-blue-700 shrink-0 font-medium">
+        <Shield className="w-3.5 h-3.5 shrink-0 text-blue-600" />
         Encrypted & HIPAA-compliant · AI responses are informational, consult professionals.
       </div>
 
@@ -1005,7 +1130,7 @@ function AIHealthAssistantTab({
         {messages.length === 1 && (
           <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs max-w-2xl mx-auto mt-4 space-y-3">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-              <Bot className="w-4 h-4 text-teal-600" /> Suggested Queries
+              <Bot className="w-4 h-4 text-blue-600" /> Suggested Queries
             </h3>
             <p className="text-xs text-slate-400">Click a chip below to start consulting your medical chatbot assistant:</p>
             <div className="flex flex-wrap gap-2 pt-1">
@@ -1013,7 +1138,7 @@ function AIHealthAssistantTab({
                 <button
                   key={q}
                   onClick={() => sendMessage(q)}
-                  className="text-xs bg-slate-50 border border-slate-200 hover:border-teal-500 hover:text-teal-700 hover:bg-teal-50 text-slate-600 px-3 py-2 rounded-xl transition-all cursor-pointer shadow-2xs font-medium"
+                  className="text-xs bg-slate-50 border border-slate-200 hover:border-blue-500 hover:text-blue-700 hover:bg-blue-50 text-slate-600 px-3 py-2 rounded-xl transition-all cursor-pointer shadow-2xs font-medium"
                 >
                   {q}
                 </button>
@@ -1026,14 +1151,14 @@ function AIHealthAssistantTab({
           {messages.map((msg) => (
             <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
                   <Bot className="w-4.5 h-4.5 text-white" />
                 </div>
               )}
               <div className="max-w-[80%] sm:max-w-[70%]">
                 <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-xs ${
                   msg.role === 'user'
-                    ? 'bg-teal-600 text-white rounded-tr-xs'
+                    ? 'bg-blue-600 text-white rounded-tr-xs'
                     : 'bg-white text-slate-800 border border-slate-100 rounded-tl-xs'
                 }`}>
                   {msg.content.includes('[BOOKING_SYSTEM]') ? (
@@ -1062,12 +1187,12 @@ function AIHealthAssistantTab({
 
           {isTyping && (
             <div className="flex gap-3 items-end">
-              <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center shrink-0 shadow-sm">
+              <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center shrink-0 shadow-sm">
                 <Bot className="w-4.5 h-4.5 text-white" />
               </div>
               <div className="bg-white border border-slate-100 shadow-sm rounded-2xl rounded-tl-xs px-4 py-3.5 flex gap-1 items-center">
                 {[0, 1, 2].map((i) => (
-                  <span key={i} className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+                  <span key={i} className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
                 ))}
               </div>
             </div>
@@ -1079,7 +1204,7 @@ function AIHealthAssistantTab({
       {/* Message Input Container */}
       <div className="border-t border-slate-200 bg-white px-4 sm:px-6 py-4 shrink-0 shadow-inner">
         <div className="max-w-3xl mx-auto">
-          <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl p-2 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/15 transition-all">
+          <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl p-2 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/15 transition-all">
             <label className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer" aria-label="Attach file">
               <Paperclip className="w-4.5 h-4.5" />
               <input type="file" className="hidden" onChange={(e) => {
@@ -1110,7 +1235,7 @@ function AIHealthAssistantTab({
             <button
               onClick={() => sendMessage()}
               disabled={!input.trim()}
-              className="p-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl transition-colors cursor-pointer shadow-xs"
+              className="p-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl transition-colors cursor-pointer shadow-xs"
               aria-label="Send message"
             >
               <Send className="w-4.5 h-4.5" />
@@ -1129,15 +1254,15 @@ interface CheckerProps {
 }
 
 const COMMON_SYMPTOMS = [
-  { label: 'Fever', specialty: 'General Practitioner', severityBoost: 1 },
+  { label: 'Fever', specialty: 'Pulmonologist', severityBoost: 1 },
   { label: 'Headache', specialty: 'Neurologist', severityBoost: 0 },
   { label: 'Chest Pain', specialty: 'Cardiologist', severityBoost: 3 },
   { label: 'Shortness of Breath', specialty: 'Cardiologist', severityBoost: 3 },
   { label: 'Skin Rash', specialty: 'Dermatologist', severityBoost: 0 },
-  { label: 'Fatigue & Weakness', specialty: 'General Practitioner', severityBoost: 0 },
-  { label: 'Joint Stiffness', specialty: 'Orthopedist', severityBoost: 1 },
+  { label: 'Fatigue & Weakness', specialty: 'Endocrinologist', severityBoost: 0 },
+  { label: 'Joint Stiffness', specialty: 'Neurologist', severityBoost: 1 },
   { label: 'Excessive Thirst / Hunger', specialty: 'Endocrinologist', severityBoost: 1 },
-  { label: 'Cough & Sore Throat', specialty: 'General Practitioner', severityBoost: 0 },
+  { label: 'Cough & Sore Throat', specialty: 'Pulmonologist', severityBoost: 0 },
 ]
 
 function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerProps) {
@@ -1193,10 +1318,10 @@ function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerPr
     else if (score >= 3) risk = 'medium'
 
     // Determine specialty recommendation
-    let bestSpecialty = 'General Practitioner'
+    let bestSpecialty = 'Pulmonologist'
     for (const symptom of selectedSymptoms) {
       const match = COMMON_SYMPTOMS.find((cs) => cs.label === symptom)
-      if (match && match.specialty !== 'General Practitioner') {
+      if (match) {
         bestSpecialty = match.specialty
         break
       }
@@ -1271,11 +1396,11 @@ function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerPr
         <div className="flex justify-between items-center border-b border-slate-100 pb-4">
           <div>
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Stethoscope className="w-5 h-5 text-teal-600 animate-pulse" /> Symptom Checker Check-up
+              <Stethoscope className="w-5 h-5 text-blue-600 animate-pulse" /> Symptom Checker Check-up
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">Analyze and get recommendation reviews</p>
           </div>
-          <span className="text-xs font-semibold px-3 py-1 bg-teal-50 text-teal-700 rounded-full border border-teal-150">
+          <span className="text-xs font-semibold px-3 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-150">
             Step {step} of 3
           </span>
         </div>
@@ -1298,8 +1423,8 @@ function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerPr
                     onClick={() => toggleSymptom(label)}
                     className={`py-3 px-4 rounded-2xl text-xs font-semibold text-center border transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 shadow-2xs ${
                       selected
-                        ? 'bg-teal-600 text-white border-teal-600 shadow-sm shadow-teal-200 scale-98'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-teal-400 hover:text-teal-700 hover:bg-teal-50/40'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-200 scale-98'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-400 hover:text-blue-700 hover:bg-blue-50/40'
                     }`}
                   >
                     <span>{label}</span>
@@ -1309,7 +1434,7 @@ function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerPr
             </div>
 
             {/* Custom Input */}
-            <form onSubmit={handleAddCustom} className="flex gap-2 bg-slate-50 border border-slate-200 p-1.5 rounded-2xl focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/10">
+            <form onSubmit={handleAddCustom} className="flex gap-2 bg-slate-50 border border-slate-200 p-1.5 rounded-2xl focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/10">
               <input
                 type="text"
                 value={customSymptom}
@@ -1319,7 +1444,7 @@ function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerPr
               />
               <button
                 type="submit"
-                className="bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1 shrink-0 shadow-2xs"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1 shrink-0 shadow-2xs"
               >
                 <Plus className="w-3.5 h-3.5" /> Add
               </button>
@@ -1329,7 +1454,7 @@ function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerPr
               <div className="flex justify-end pt-3">
                 <button
                   onClick={() => setStep(2)}
-                  className="bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   Continue <ChevronRight className="w-4 h-4" />
                 </button>
@@ -1345,7 +1470,7 @@ function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerPr
             <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-wrap gap-1.5 items-center">
               <span className="text-xs font-semibold text-slate-400 mr-2">Selected:</span>
               {selectedSymptoms.map((s) => (
-                <span key={s} className="text-[10px] bg-teal-50 border border-teal-200 text-teal-700 px-2 py-0.5 rounded-md font-semibold">
+                <span key={s} className="text-[10px] bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded-md font-semibold">
                   {s}
                 </span>
               ))}
@@ -1362,11 +1487,11 @@ function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerPr
                     className={`py-3.5 rounded-2xl text-xs font-semibold border text-center transition-all cursor-pointer capitalize shadow-2xs ${
                       severity === level
                         ? level === 'mild'
-                          ? 'bg-green-600 border-green-600 text-white shadow-sm shadow-green-250'
+                          ? 'bg-green-600 border-green-600 text-white shadow-sm shadow-green-200'
                           : level === 'moderate'
-                          ? 'bg-amber-500 border-amber-500 text-white shadow-sm shadow-amber-250'
-                          : 'bg-red-600 border-red-600 text-white shadow-sm shadow-red-250'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-350 hover:bg-slate-100'
+                          ? 'bg-amber-500 border-amber-500 text-white shadow-sm shadow-amber-200'
+                          : 'bg-red-600 border-red-600 text-white shadow-sm shadow-red-200'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100'
                     }`}
                   >
                     {level}
@@ -1385,8 +1510,8 @@ function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerPr
                     onClick={() => setDuration(dur)}
                     className={`py-3 rounded-2xl text-xs font-semibold border text-center transition-all cursor-pointer shadow-2xs ${
                       duration === dur
-                        ? 'bg-teal-600 text-white border-teal-600 shadow-sm shadow-teal-200'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-teal-400 hover:text-teal-700 hover:bg-teal-50'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-200'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-400 hover:text-blue-700 hover:bg-blue-50'
                     }`}
                   >
                     {dur}
@@ -1407,11 +1532,11 @@ function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerPr
                       onClick={() => toggleOtherSymptom(other)}
                       className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-xs font-medium transition-all text-left cursor-pointer ${
                         checked
-                          ? 'bg-teal-50 border-teal-200 text-teal-700'
+                          ? 'bg-blue-50 border-blue-200 text-blue-700'
                           : 'bg-slate-50/50 border-slate-200 text-slate-600 hover:bg-slate-50'
                       }`}
                     >
-                      <CheckCircle className={`w-4 h-4 shrink-0 transition-colors ${checked ? 'text-teal-600' : 'text-slate-300'}`} />
+                      <CheckCircle className={`w-4 h-4 shrink-0 transition-colors ${checked ? 'text-blue-600' : 'text-slate-300'}`} />
                       <span className="truncate">{other}</span>
                     </button>
                   )
@@ -1429,7 +1554,7 @@ function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerPr
               </button>
               <button
                 onClick={runAnalysis}
-                className="bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 Get Diagnosis <Activity className="w-4 h-4" />
               </button>
@@ -1447,12 +1572,12 @@ function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerPr
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="bg-slate-50/60 border border-slate-100 p-4 rounded-2xl shadow-2xs space-y-2">
                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <Activity className="w-4 h-4 text-teal-600" /> Possible Causes
+                  <Activity className="w-4 h-4 text-blue-600" /> Possible Causes
                 </h4>
                 <ul className="space-y-1.5 pt-1">
                   {analysisResult.causes.map((c, i) => (
-                    <li key={i} className="text-xs text-slate-655 flex items-start gap-1.5 leading-relaxed">
-                      <span className="text-teal-500 font-bold shrink-0">•</span>
+                    <li key={i} className="text-xs text-slate-600 flex items-start gap-1.5 leading-relaxed">
+                      <span className="text-blue-500 font-bold shrink-0">•</span>
                       <span>{c}</span>
                     </li>
                   ))}
@@ -1465,7 +1590,7 @@ function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerPr
                 </h4>
                 <ul className="space-y-1.5 pt-1">
                   {analysisResult.advice.map((a, i) => (
-                    <li key={i} className="text-xs text-slate-655 flex items-start gap-1.5 leading-relaxed">
+                    <li key={i} className="text-xs text-slate-600 flex items-start gap-1.5 leading-relaxed">
                       <span className="text-blue-500 font-bold shrink-0">•</span>
                       <span>{a}</span>
                     </li>
@@ -1475,19 +1600,19 @@ function SymptomCheckerTab({ scrollToSection, setSuggestedSpecialty }: CheckerPr
             </div>
 
             {/* Specialist Match Panel */}
-            <div className="bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-100 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-100 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center shadow-2xs">
-                  <UserIcon className="w-5 h-5 text-teal-600" />
+                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center shadow-2xs">
+                  <UserIcon className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-slate-400">Match recommendation</h4>
-                  <p className="text-sm font-bold text-teal-850">Consult a {analysisResult.specialist}</p>
+                  <p className="text-sm font-bold text-blue-800">Consult a {analysisResult.specialist}</p>
                 </div>
               </div>
               <button
                 onClick={navigateToDoctor}
-                className="bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap"
+                className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap"
               >
                 Find & Book Doctor <ChevronRight className="w-4 h-4" />
               </button>
@@ -1577,7 +1702,17 @@ function DoctorRecommendationsTab({
     }
   }, [suggestedSpecialty])
 
-  const specialties = ['All', 'General Practitioner', 'Cardiologist', 'Neurologist', 'Dermatologist', 'Endocrinologist', 'Orthopedist']
+  const specialties = [
+    'All',
+    'Cardiologist',
+    'Endocrinologist',
+    'Pulmonologist',
+    'Neurologist',
+    'Gastroenterologist',
+    'Dermatologist',
+    'Nephrologist',
+    'Psychiatrist'
+  ]
 
   const filteredDoctors = DOCTORS.filter((doc) => {
     const matchSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase()) || doc.specialty.toLowerCase().includes(searchTerm.toLowerCase())
@@ -1640,7 +1775,7 @@ function DoctorRecommendationsTab({
       
       {/* Toast */}
       {showSuccess && (
-        <div className="fixed top-5 right-5 z-50 bg-teal-650 text-white text-xs font-semibold px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 animate-bounce">
+        <div className="fixed top-5 right-5 z-50 bg-blue-600 text-white text-xs font-semibold px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 animate-bounce">
           <CheckCircle className="w-5 h-5 shrink-0" />
           Appointment booked successfully! Confirmation sent.
         </div>
@@ -1649,7 +1784,7 @@ function DoctorRecommendationsTab({
       {/* Filter and search bar */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 space-y-4">
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-2xl focus-within:border-teal-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-teal-500/10">
+          <div className="flex-1 flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-2xl focus-within:border-blue-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/10">
             <Search className="w-4 h-4 text-slate-400" />
             <input
               type="text"
@@ -1665,7 +1800,7 @@ function DoctorRecommendationsTab({
                 setSuggestedSpecialty(null)
                 setSelectedSpecialty('All')
               }}
-              className="text-xs bg-teal-50 text-teal-700 font-semibold px-3 py-2.5 rounded-2xl border border-teal-200 hover:bg-teal-100 shrink-0 cursor-pointer"
+              className="text-xs bg-blue-50 text-blue-700 font-semibold px-3 py-2.5 rounded-2xl border border-blue-200 hover:bg-blue-100 shrink-0 cursor-pointer"
             >
               Clear Pre-Filter ({suggestedSpecialty})
             </button>
@@ -1685,8 +1820,8 @@ function DoctorRecommendationsTab({
               }}
               className={`text-[11px] font-semibold px-3.5 py-1.8 rounded-xl border transition-all cursor-pointer whitespace-nowrap shadow-2xs ${
                 selectedSpecialty === spec
-                  ? 'bg-teal-650 border-teal-650 text-white shadow-sm'
-                  : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-teal-400 hover:bg-teal-50'
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                  : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-blue-400 hover:bg-blue-50'
               }`}
             >
               {spec}
@@ -1700,10 +1835,10 @@ function DoctorRecommendationsTab({
         <h3 className="text-sm font-bold text-slate-700">Recommended Medical Specialists ({filteredDoctors.length})</h3>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredDoctors.map((doc) => (
-            <div key={doc.name} className="bg-white rounded-3xl border border-slate-250 hover:border-teal-450 hover:shadow-md transition-all p-5 flex flex-col justify-between space-y-4">
+            <div key={doc.name} className="bg-white rounded-3xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all p-5 flex flex-col justify-between space-y-4">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-teal-55 text-teal-705 text-sm font-extrabold flex items-center justify-center shadow-inner">
+                  <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-700 text-sm font-extrabold flex items-center justify-center shadow-inner">
                     {doc.avatar}
                   </div>
                   <div>
@@ -1716,15 +1851,15 @@ function DoctorRecommendationsTab({
                 </span>
               </div>
 
-              <div className="text-xs text-slate-655 space-y-1 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+              <div className="text-xs text-slate-600 space-y-1 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
                 <p className="flex justify-between"><span>Experience:</span> <span className="font-semibold text-slate-800">{doc.exp}</span></p>
                 <p className="flex justify-between"><span>Location:</span> <span className="font-semibold text-slate-800">{doc.clinic}</span></p>
-                <p className="flex justify-between"><span>Available:</span> <span className="font-semibold text-teal-600">{doc.available}</span></p>
+                <p className="flex justify-between"><span>Available:</span> <span className="font-semibold text-blue-600">{doc.available}</span></p>
               </div>
 
               <button
                 onClick={() => handleOpenBooking(doc)}
-                className="w-full bg-teal-600 hover:bg-teal-750 active:scale-97 text-white text-xs font-bold py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
+                className="w-full bg-blue-600 hover:bg-blue-700 active:scale-97 text-white text-xs font-bold py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
               >
                 <Calendar className="w-3.5 h-3.5" /> Book Consultation
               </button>
@@ -1737,13 +1872,13 @@ function DoctorRecommendationsTab({
       <div className="border-t border-slate-200 pt-6 space-y-3">
         <h3 className="text-sm font-bold text-slate-700">Your Scheduled Consultations ({appointments.length})</h3>
         {appointments.length === 0 ? (
-          <p className="text-xs text-slate-455 text-center py-6 bg-white border border-slate-200 rounded-3xl">No bookings scheduled yet</p>
+          <p className="text-xs text-slate-400 text-center py-6 bg-white border border-slate-200 rounded-3xl">No bookings scheduled yet</p>
         ) : (
           <div className="space-y-2.5">
             {appointments.map((apt, idx) => (
               <div key={idx} className="bg-white border border-slate-200 rounded-3xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-teal-50 text-teal-700 text-xs font-bold flex items-center justify-center shadow-inner">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-700 text-xs font-bold flex items-center justify-center shadow-inner">
                     {apt.avatar}
                   </div>
                   <div>
@@ -1753,14 +1888,14 @@ function DoctorRecommendationsTab({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${apt.status === 'upcoming' ? 'bg-teal-50 text-teal-700' : 'bg-slate-150 text-slate-500'}`}>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${apt.status === 'upcoming' ? 'bg-blue-50 text-blue-700' : 'bg-slate-150 text-slate-500'}`}>
                     {apt.status === 'upcoming' ? '● Upcoming' : '✓ Completed'}
                   </span>
                   {apt.status === 'upcoming' && (
                     <>
                       <button
                         onClick={() => setDetailApt(apt)}
-                        className="text-[10px] font-bold border border-teal-200 hover:bg-teal-50 text-teal-600 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                        className="text-[10px] font-bold border border-blue-200 hover:bg-blue-50 text-blue-600 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
                       >
                         Details
                       </button>
@@ -1785,14 +1920,14 @@ function DoctorRecommendationsTab({
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto scrollbar-thin">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h3 className="font-bold text-slate-900 text-sm">Request Booking Consultation</h3>
-              <button onClick={() => { setShowModal(false); setErrors({}); setForm({ doctor: '', date: '', time: '', reason: '' }) }} className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center cursor-pointer">
+              <button onClick={() => { setShowModal(false); setErrors({}); setForm({ doctor: '', date: '', time: '', reason: '' }) }} className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-all cursor-pointer outline-none focus:outline-none">
                 <X className="w-4 h-4" />
               </button>
             </div>
             
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                <div className="w-10 h-10 rounded-full bg-teal-100 text-teal-700 text-xs font-bold flex items-center justify-center shadow-inner">{bookingDoc.avatar}</div>
+                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shadow-inner">{bookingDoc.avatar}</div>
                 <div>
                   <h4 className="text-xs font-bold text-slate-900">{bookingDoc.name}</h4>
                   <p className="text-[10px] text-slate-500 font-semibold">{bookingDoc.specialty}</p>
@@ -1808,7 +1943,7 @@ function DoctorRecommendationsTab({
                   value={form.date}
                   onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
                   className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none cursor-pointer ${
-                    errors.date ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-slate-50 focus:border-teal-500 focus:bg-white'
+                    errors.date ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white'
                   }`}
                 />
                 {errors.date && <p className="mt-1 text-[10px] text-red-500">{errors.date}</p>}
@@ -1825,8 +1960,8 @@ function DoctorRecommendationsTab({
                       onClick={() => setForm((p) => ({ ...p, time: slot }))}
                       className={`py-2 text-[10px] font-bold rounded-xl border transition-all cursor-pointer ${
                         form.time === slot
-                          ? 'bg-teal-600 text-white border-teal-650 shadow-sm'
-                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-teal-400 hover:text-teal-700 hover:bg-teal-50'
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-700 hover:bg-blue-50'
                       }`}
                     >
                       {slot}
@@ -1845,7 +1980,7 @@ function DoctorRecommendationsTab({
                   value={form.reason}
                   onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))}
                   className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none resize-none ${
-                    errors.reason ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-slate-50 focus:border-teal-500 focus:bg-white'
+                    errors.reason ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-slate-50 focus:border-blue-500 focus:bg-white'
                   }`}
                 />
                 {errors.reason && <p className="mt-1 text-[10px] text-red-500">{errors.reason}</p>}
@@ -1855,14 +1990,14 @@ function DoctorRecommendationsTab({
             <div className="flex gap-3 px-6 pb-6 pt-2 border-t border-slate-100">
               <button
                 onClick={() => { setShowModal(false); setErrors({}); setForm({ doctor: '', date: '', time: '', reason: '' }) }}
-                className="flex-1 py-2.5 border border-slate-200 hover:bg-slate-50 text-xs font-semibold rounded-xl text-slate-505 cursor-pointer"
+                className="flex-1 py-2.5 border border-slate-200 hover:bg-slate-50 text-xs font-semibold rounded-xl text-slate-500 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmitBooking}
                 disabled={submitting}
-                className="flex-1 py-2.5 bg-teal-600 hover:bg-teal-750 disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
               >
                 {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Confirm Booking'}
               </button>
@@ -1877,13 +2012,13 @@ function DoctorRecommendationsTab({
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h3 className="font-bold text-slate-900 text-sm">Consultation Summary</h3>
-              <button onClick={() => setDetailApt(null)} className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center cursor-pointer">
+              <button onClick={() => setDetailApt(null)} className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-all cursor-pointer outline-none focus:outline-none">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="p-6 space-y-3 text-xs">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-teal-100 text-teal-700 text-sm font-bold flex items-center justify-center">{detailApt.avatar}</div>
+                <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 text-sm font-bold flex items-center justify-center">{detailApt.avatar}</div>
                 <div>
                   <h4 className="font-bold text-slate-900">{detailApt.doctor}</h4>
                   <p className="text-[10px] text-slate-500 font-semibold">{detailApt.specialty}</p>
@@ -1892,10 +2027,10 @@ function DoctorRecommendationsTab({
               <hr className="border-slate-100 my-2" />
               <div className="flex justify-between"><span className="text-slate-400">Date & Time:</span> <span className="font-semibold text-slate-800">{detailApt.date} at {detailApt.time}</span></div>
               <div className="flex justify-between"><span className="text-slate-400">Location:</span> <span className="font-semibold text-slate-800">Main Medical Complex, Suite F</span></div>
-              <div className="flex justify-between"><span className="text-slate-400">Status:</span> <span className="font-semibold text-teal-600 capitalize">{detailApt.status}</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">Status:</span> <span className="font-semibold text-blue-600 capitalize">{detailApt.status}</span></div>
             </div>
             <div className="px-6 pb-6">
-              <button onClick={() => setDetailApt(null)} className="w-full py-2.5 bg-teal-650 hover:bg-teal-700 text-white text-xs font-semibold rounded-xl cursor-pointer">Close</button>
+              <button onClick={() => setDetailApt(null)} className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl cursor-pointer">Close</button>
             </div>
           </div>
         </div>
@@ -1907,32 +2042,37 @@ function DoctorRecommendationsTab({
 interface HistoryTabProps {
   chatSessions: ChatSession[]
   setChatSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>
+  setFloatMsgs: React.Dispatch<React.SetStateAction<Message[]>>
+  activeSessionId: string | null
   setActiveSessionId: (id: string | null) => void
-  scrollToSection: (id: string) => void
+  setShowFloatingChat: (show: boolean) => void
   startNewChat: () => void
 }
 
 function ChatHistoryTab({
   chatSessions,
   setChatSessions,
-  setMessages,
+  setFloatMsgs,
+  activeSessionId,
   setActiveSessionId,
-  scrollToSection,
+  setShowFloatingChat,
   startNewChat,
 }: HistoryTabProps) {
   const [selectedSessionDetail, setSelectedSessionDetail] = useState<ChatSession | null>(null)
 
   const handleResumeSession = (session: ChatSession) => {
-    setMessages(session.messages)
+    setFloatMsgs(session.messages)
     setActiveSessionId(session.id)
-    scrollToSection('ai-assistant')
+    setShowFloatingChat(true)
   }
 
   const handleDeleteSession = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     if (confirm('Are you sure you want to delete this chat history session permanently?')) {
       setChatSessions((prev) => prev.filter((s) => s.id !== id))
+      if (activeSessionId === id) {
+        startNewChat()
+      }
     }
   }
 
@@ -1947,7 +2087,7 @@ function ChatHistoryTab({
         </div>
         <button
           onClick={startNewChat}
-          className="text-xs bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+          className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
         >
           <Plus className="w-4 h-4" /> New Dialogue
         </button>
@@ -1965,13 +2105,13 @@ function ChatHistoryTab({
             <div
               key={session.id}
               onClick={() => handleResumeSession(session)}
-              className="bg-gray-50 hover:bg-teal-50 border border-gray-200 hover:border-teal-300 rounded-2xl p-4 cursor-pointer flex flex-col justify-between space-y-3 group transition-all hover:shadow-md"
+              className="bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-2xl p-4 cursor-pointer flex flex-col justify-between space-y-3 group transition-all hover:shadow-md"
             >
               <div className="flex items-start gap-3 justify-between">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="text-2xl shrink-0">{session.icon}</span>
+                  <span className="text-2xl shrink-0 flex items-center justify-center">{renderSessionIcon(session.icon)}</span>
                   <div className="min-w-0">
-                    <h4 className="text-xs font-bold text-gray-800 truncate group-hover:text-teal-700 transition-colors">{session.title}</h4>
+                    <h4 className="text-xs font-bold text-gray-800 truncate group-hover:text-blue-700 transition-colors">{session.title}</h4>
                     <p className="text-[10px] text-gray-400 mt-0.5">{session.time}</p>
                   </div>
                 </div>
@@ -2009,12 +2149,12 @@ function ChatHistoryTab({
       {selectedSessionDetail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col border border-gray-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-teal-50 to-cyan-50 shrink-0">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-emerald-50 shrink-0">
               <div>
                 <h3 className="font-bold text-gray-900 text-sm">Dialogue: {selectedSessionDetail.title}</h3>
                 <p className="text-[10px] text-gray-400 mt-0.5">{selectedSessionDetail.time} · {selectedSessionDetail.messages.length} Messages</p>
               </div>
-              <button onClick={() => setSelectedSessionDetail(null)} className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 cursor-pointer transition-colors">
+              <button onClick={() => setSelectedSessionDetail(null)} className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100/50 flex items-center justify-center transition-all cursor-pointer outline-none focus:outline-none">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -2023,7 +2163,7 @@ function ChatHistoryTab({
               {selectedSessionDetail.messages.map((m) => (
                 <div key={m.id} className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className={`text-[10px] font-bold uppercase tracking-wider ${m.role === 'user' ? 'text-teal-600' : 'text-blue-600'}`}>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${m.role === 'user' ? 'text-blue-600' : 'text-blue-600'}`}>
                       {m.role === 'user' ? 'You (Patient)' : 'AI Healthcare Bot'}
                     </span>
                     <span className="text-[9px] text-gray-400">{m.time}</span>
@@ -2048,7 +2188,7 @@ function ChatHistoryTab({
                   setSelectedSessionDetail(null)
                   handleResumeSession(s)
                 }}
-                className="flex-1 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl cursor-pointer text-center shadow-sm"
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl cursor-pointer text-center shadow-sm"
               >
                 Resume Dialogue
               </button>
@@ -2064,28 +2204,35 @@ interface HomeTabProps {
   scrollToSection: (id: string) => void
   appointments: Appointment[]
   chatSessions: ChatSession[]
+  setShowFloatingChat: (show: boolean) => void
 }
 
-function HomeTab({ scrollToSection, appointments, chatSessions }: HomeTabProps) {
+function HomeTab({ scrollToSection, appointments, chatSessions, setShowFloatingChat }: HomeTabProps) {
   const { user } = useAuth()
   const upcomingAppointment = appointments.find(a => a.status === 'upcoming')
 
   return (
     <div className="py-8 space-y-8">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-br from-teal-600 via-teal-500 to-cyan-400 rounded-2xl p-8 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-blue-600 via-blue-500 to-emerald-400 rounded-2xl p-8 relative overflow-hidden">
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10" />
         <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/10" />
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-blue-50 shadow-sm backdrop-blur mb-3">
+              <Sparkles className="h-3.5 w-3.5 text-amber-300 animate-pulse" />
+              AI-Powered Healthcare Assistant
+            </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Welcome back, {user?.name?.split(' ')[0] ?? 'User'}! 👋
+              Welcome back, {user?.name?.split(' ')[0] ?? 'User'}!
             </h2>
-            <p className="text-teal-100 text-sm mt-1">Here's your health overview for today.</p>
+            <p className="text-blue-100 text-sm mt-1.5 max-w-lg">
+              Get personalized symptom-based health guidance, medicine information, and doctor recommendations right here.
+            </p>
           </div>
           <button
-            onClick={() => scrollToSection('ai-assistant')}
-            className="bg-white hover:bg-teal-50 text-teal-700 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition flex items-center gap-2 cursor-pointer shrink-0"
+            onClick={() => setShowFloatingChat(true)}
+            className="bg-white hover:bg-blue-50 text-blue-700 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition flex items-center gap-2 cursor-pointer shrink-0"
           >
             <Bot className="w-4 h-4" /> Ask AI Assistant
           </button>
@@ -2097,7 +2244,7 @@ function HomeTab({ scrollToSection, appointments, chatSessions }: HomeTabProps) 
         {/* Next Appointment Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
               <Calendar className="w-5 h-5" />
             </div>
             <h3 className="font-bold text-gray-800 text-base">Next Appointment</h3>
@@ -2108,9 +2255,9 @@ function HomeTab({ scrollToSection, appointments, chatSessions }: HomeTabProps) 
                 <p className="text-sm font-bold text-gray-900">{upcomingAppointment.doctor}</p>
                 <p className="text-xs text-gray-500">{upcomingAppointment.specialty}</p>
               </div>
-              <div className="bg-teal-50 rounded-xl px-4 py-2.5 flex items-center gap-2.5 border border-teal-100">
-                <Clock className="w-4 h-4 text-teal-600" />
-                <span className="text-xs font-semibold text-teal-800">{upcomingAppointment.date} · {upcomingAppointment.time}</span>
+              <div className="bg-blue-50 rounded-xl px-4 py-2.5 flex items-center gap-2.5 border border-blue-100">
+                <Clock className="w-4 h-4 text-blue-600" />
+                <span className="text-xs font-semibold text-blue-800">{upcomingAppointment.date} · {upcomingAppointment.time}</span>
               </div>
             </div>
           ) : (
@@ -2118,7 +2265,7 @@ function HomeTab({ scrollToSection, appointments, chatSessions }: HomeTabProps) 
           )}
           <button
             onClick={() => scrollToSection('doctor-recommendations')}
-            className="mt-4 text-teal-600 hover:text-teal-700 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+            className="mt-4 text-blue-600 hover:text-blue-700 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
           >
             Manage Appointments <ChevronRight className="w-3.5 h-3.5" />
           </button>
@@ -2135,7 +2282,7 @@ function HomeTab({ scrollToSection, appointments, chatSessions }: HomeTabProps) 
           {chatSessions.length > 0 ? (
             <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
               <p className="text-xs font-bold text-gray-800 truncate flex items-center gap-1.5">
-                <span>{chatSessions[0].icon}</span> {chatSessions[0].title}
+                <span className="flex items-center justify-center shrink-0">{renderSessionIcon(chatSessions[0].icon)}</span> {chatSessions[0].title}
               </p>
               <p className="text-[10px] text-gray-400 truncate italic mt-0.5">"{chatSessions[0].preview}"</p>
             </div>
@@ -2144,7 +2291,7 @@ function HomeTab({ scrollToSection, appointments, chatSessions }: HomeTabProps) 
           )}
           <button
             onClick={() => scrollToSection('chat-history')}
-            className="mt-4 text-teal-600 hover:text-teal-700 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+            className="mt-4 text-blue-600 hover:text-blue-700 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
           >
             View History <ChevronRight className="w-3.5 h-3.5" />
           </button>
@@ -2157,7 +2304,7 @@ function HomeTab({ scrollToSection, appointments, chatSessions }: HomeTabProps) 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: 'Check Symptoms', icon: Stethoscope, id: 'symptom-checker', bg: 'bg-purple-100', text: 'text-purple-600', hover: 'hover:bg-purple-50' },
-            { label: 'Book Consultations', icon: Calendar, id: 'doctor-recommendations', bg: 'bg-teal-100', text: 'text-teal-600', hover: 'hover:bg-teal-50' },
+            { label: 'Book Consultations', icon: Calendar, id: 'doctor-recommendations', bg: 'bg-blue-100', text: 'text-blue-600', hover: 'hover:bg-blue-50' },
             { label: 'Dialogue Logs', icon: History, id: 'chat-history', bg: 'bg-blue-100', text: 'text-blue-600', hover: 'hover:bg-blue-50' },
           ].map((action) => (
             <button
@@ -2176,3 +2323,6 @@ function HomeTab({ scrollToSection, appointments, chatSessions }: HomeTabProps) 
     </div>
   )
 }
+
+
+
