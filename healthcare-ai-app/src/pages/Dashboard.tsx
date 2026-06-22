@@ -18,6 +18,8 @@ interface Message {
   time: string
 }
 
+export interface Doctor { name: string; specialty: string; avatar: string; rating: string; exp: string; clinic: string; available: string }
+
 interface ChatSession {
   id: string
   title: string
@@ -181,16 +183,6 @@ const WEBHOOK_URL = (() => {
   return CONFIGURED_WEBHOOK_URL
 })()
 
-const DOCTORS = [
-  { name: 'Dr. Rajesh Sharma', specialty: 'Cardiologist', avatar: 'RS', rating: '4.9', exp: '15 years', clinic: 'Metro Hospital, Cardiology Dept', available: 'Today' },
-  { name: 'Dr. Priya Verma', specialty: 'Endocrinologist', avatar: 'PV', rating: '4.8', exp: '12 years', clinic: 'Fortis Clinic, Endocrinology Dept', available: 'Tomorrow' },
-  { name: 'Dr. Amit Kumar', specialty: 'Pulmonologist', avatar: 'AK', rating: '4.7', exp: '10 years', clinic: 'Apollo Hospital, Pulmonology Dept', available: 'Wednesday' },
-  { name: 'Dr. Neha Singh', specialty: 'Neurologist', avatar: 'NS', rating: '4.9', exp: '14 years', clinic: 'Max Hospital, Neurology Dept', available: 'Tomorrow' },
-  { name: 'Dr. Vikram Patel', specialty: 'Gastroenterologist', avatar: 'VP', rating: '4.8', exp: '13 years', clinic: 'Care Hospital, Gastroenterology Dept', available: 'Today' },
-  { name: 'Dr. Anjali Gupta', specialty: 'Dermatologist', avatar: 'AG', rating: '4.6', exp: '9 years', clinic: 'Skin Health Center, Dermatology Dept', available: 'Thursday' },
-  { name: 'Dr. Rohit Mehta', specialty: 'Nephrologist', avatar: 'RM', rating: '4.7', exp: '11 years', clinic: 'Nephron Care, Nephrology Dept', available: 'Friday' },
-  { name: 'Dr. Sneha Joshi', specialty: 'Psychiatrist', avatar: 'SJ', rating: '4.8', exp: '8 years', clinic: 'Mind & Care Clinic, Psychiatry Dept', available: 'Today' },
-]
 
 const MEDICINES_DB = [
   { name: 'Lisinopril', category: 'Heart', desc: 'Used to treat high blood pressure and heart failure.', guidelines: 'Take once daily in the morning, with or without food. Avoid potassium supplements.', sideEffects: 'Dry cough, dizziness, headache, fatigue.' },
@@ -281,37 +273,56 @@ export default function Dashboard() {
   const [suggestedSpecialty, setSuggestedSpecialty] = useState<string | null>(null)
 
   // Lifted States
-  const storageKey = `mediAssistChatSessions_${user?.email || 'default'}`
-  
-  const [chatSessions, setChatSessions] = useState<ChatSession[]>(() => {
-    const saved = localStorage.getItem(storageKey)
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch (e) {
-        return INITIAL_CHAT_SESSIONS
-      }
-    }
-    return INITIAL_CHAT_SESSIONS
-  })
+  const API_URL = 'http://localhost:5000/api'
+  const [doctorsList, setDoctorsList] = useState<Doctor[]>([])
+  useEffect(() => {
+    fetch(`${API_URL}/doctors`)
+      .then(res => res.json())
+      .then(data => setDoctorsList(data))
+      .catch(err => console.error(err))
+  }, [])
+
+  const [isChatsLoaded, setIsChatsLoaded] = useState(false)
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>(INITIAL_CHAT_SESSIONS)
 
   useEffect(() => {
-    const saved = localStorage.getItem(storageKey)
-    if (saved) {
+    if (!user?.email) return
+    const fetchChats = async () => {
       try {
-        setChatSessions(JSON.parse(saved))
-      } catch (e) {
-        setChatSessions(INITIAL_CHAT_SESSIONS)
+        const response = await fetch(`${API_URL}/chats?email=${user.email}`)
+        const data = await response.json()
+        if (response.ok) {
+          if (data && data.length > 0) {
+            setChatSessions(data)
+          } else {
+            setChatSessions(INITIAL_CHAT_SESSIONS)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch chats', err)
+      } finally {
+        setIsChatsLoaded(true)
       }
-    } else {
-      setChatSessions(INITIAL_CHAT_SESSIONS)
     }
+    fetchChats()
     setActiveSessionId(null)
-  }, [storageKey])
+  }, [user?.email])
 
   useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(chatSessions))
-  }, [chatSessions, storageKey])
+    if (!isChatsLoaded || !user?.email) return
+    const syncChats = async () => {
+      try {
+        await fetch(`${API_URL}/chats/bulk`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userEmail: user.email, sessions: chatSessions })
+        })
+      } catch (err) {
+        console.error('Failed to sync chats', err)
+      }
+    }
+    syncChats()
+  }, [chatSessions, isChatsLoaded, user?.email])
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   
   const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS)
@@ -327,7 +338,7 @@ export default function Dashboard() {
     await new Promise((r) => setTimeout(r, 800))
 
     // 2. Find doctor info
-    const doc = DOCTORS.find((d) => d.name === doctorName) || { avatar: 'MD', specialty: 'Cardiologist' }
+    const doc = doctorsList.find((d) => d.name === doctorName) || { avatar: 'MD', specialty: 'Cardiologist' }
 
     // 3. Format date
     const dateObj = new Date(date + 'T00:00:00')
@@ -643,6 +654,7 @@ export default function Dashboard() {
                         <p>{msg.content.replace('[BOOKING_SYSTEM]', '').trim()}</p>
                         <InlineBookingCard
                           messageId={msg.id}
+                          doctors={doctorsList}
                           onConfirm={async (msgId, docName, date, time, reason) => {
                             await handleConfirmBooking(msgId, docName, date, time, reason)
                           }}
@@ -764,7 +776,7 @@ export default function Dashboard() {
                 <Heart className="w-5 h-5 text-rose-500" fill="currentColor" /> Specialist Recommendations
               </h3>
             </div>
-            <DoctorRecommendationsTab
+            <DoctorRecommendationsTab doctors={doctorsList}
               suggestedSpecialty={suggestedSpecialty}
               setSuggestedSpecialty={setSuggestedSpecialty}
               appointments={appointments}
@@ -799,6 +811,7 @@ export default function Dashboard() {
 
 interface InlineBookingCardProps {
   messageId: string
+  doctors: Doctor[]
   onConfirm: (
     msgId: string,
     doctorName: string,
@@ -808,8 +821,8 @@ interface InlineBookingCardProps {
   ) => Promise<void>
 }
 
-function InlineBookingCard({ messageId, onConfirm }: InlineBookingCardProps) {
-  const [selectedDoctor, setSelectedDoctor] = useState(DOCTORS[0].name)
+function InlineBookingCard({ messageId, doctors, onConfirm }: InlineBookingCardProps) {
+  const [selectedDoctor, setSelectedDoctor] = useState(doctors[0]?.name || '')
   const [bookingDate, setBookingDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
   const [bookingReason, setBookingReason] = useState('')
@@ -819,7 +832,7 @@ function InlineBookingCard({ messageId, onConfirm }: InlineBookingCardProps) {
   const today = new Date().toISOString().split('T')[0]
   const TIME_SLOTS = ['9:00 AM', '10:00 AM', '11:30 AM', '2:00 PM', '3:30 PM', '4:30 PM']
 
-  const selectedDocInfo = DOCTORS.find(d => d.name === selectedDoctor)
+  const selectedDocInfo = doctors.find(d => d.name === selectedDoctor)
 
   const handleConfirm = async () => {
     const errs: { date?: string; time?: string } = {}
@@ -859,7 +872,7 @@ function InlineBookingCard({ messageId, onConfirm }: InlineBookingCardProps) {
           onChange={e => setSelectedDoctor(e.target.value)}
           className="w-full bg-white border border-slate-200 text-slate-800 rounded-xl px-3 py-2 text-xs outline-none focus:border-blue-500 transition-all cursor-pointer"
         >
-          {DOCTORS.map(doc => (
+          {doctors.map(doc => (
             <option key={doc.name} value={doc.name}>
               {doc.name} ({doc.specialty})
             </option>
@@ -956,6 +969,7 @@ interface ChatTabProps {
   setChatSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>
   activeSessionId: string | null
   setActiveSessionId: React.Dispatch<React.SetStateAction<string | null>>
+  doctorsList: Doctor[]
   onConfirmBooking: (
     msgId: string,
     doctorName: string,
@@ -972,6 +986,7 @@ export function AIHealthAssistantTab({
   setChatSessions,
   activeSessionId,
   setActiveSessionId,
+  doctorsList,
   onConfirmBooking,
 }: ChatTabProps) {
   const [input, setInput] = useState('')
@@ -1166,6 +1181,7 @@ export function AIHealthAssistantTab({
                       <p>{msg.content.replace('[BOOKING_SYSTEM]', '').trim()}</p>
                       <InlineBookingCard
                         messageId={msg.id}
+                        doctors={doctorsList}
                         onConfirm={async (msgId, docName, date, time, reason) => {
                           await onConfirmBooking(msgId, docName, date, time, reason, false)
                         }}
@@ -1660,7 +1676,7 @@ function RiskMeter({ level }: { level: 'low' | 'medium' | 'high' }) {
 }
 
 // ── 3. Doctor Recommendations Tab ─────────────────────────────────────────────
-interface DoctorsTabProps {
+interface DoctorsTabProps { doctors: Doctor[], 
   suggestedSpecialty: string | null
   setSuggestedSpecialty: (spec: string | null) => void
   appointments: Appointment[]
@@ -1674,7 +1690,7 @@ interface ScheduleForm {
   reason: string
 }
 
-function DoctorRecommendationsTab({
+function DoctorRecommendationsTab({ doctors, 
   suggestedSpecialty,
   setSuggestedSpecialty,
   appointments,
@@ -1684,7 +1700,7 @@ function DoctorRecommendationsTab({
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('All')
   
   // Modals
-  const [bookingDoc, setBookingDoc] = useState<typeof DOCTORS[number] | null>(null)
+  const [bookingDoc, setBookingDoc] = useState<Doctor | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   
@@ -1714,13 +1730,13 @@ function DoctorRecommendationsTab({
     'Psychiatrist'
   ]
 
-  const filteredDoctors = DOCTORS.filter((doc) => {
+  const filteredDoctors = doctors.filter((doc) => {
     const matchSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase()) || doc.specialty.toLowerCase().includes(searchTerm.toLowerCase())
     const matchSpecialty = selectedSpecialty === 'All' || doc.specialty === selectedSpecialty
     return matchSearch && matchSpecialty
   })
 
-  const handleOpenBooking = (doc: typeof DOCTORS[number]) => {
+  const handleOpenBooking = (doc: Doctor) => {
     setBookingDoc(doc)
     setForm({ doctor: doc.name, date: '', time: '', reason: '' })
     setShowModal(true)
@@ -2323,6 +2339,7 @@ function HomeTab({ scrollToSection, appointments, chatSessions, setShowFloatingC
     </div>
   )
 }
+
 
 
 

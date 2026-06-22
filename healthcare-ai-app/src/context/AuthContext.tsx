@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import toast from 'react-hot-toast'
-import { generateToken, verifyToken } from '../utils/jwt'
+import { verifyToken } from '../utils/jwt'
 
 export interface User {
   name: string
@@ -97,10 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Persist auth
   useEffect(() => {
-    if (isAuthenticated && user) {
-      const token = generateToken(user)
-      localStorage.setItem(JWT_KEY, token)
-    } else {
+    if (!isAuthenticated || !user) {
       localStorage.removeItem(JWT_KEY)
     }
   }, [isAuthenticated, user])
@@ -116,51 +113,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     document.documentElement.style.fontSize = sizes[settings.appearance.fontSize]
   }, [settings.appearance.fontSize])
 
-  const USERS_DB_KEY = 'mediai_users_db'
+  const API_URL = 'http://localhost:5000/api';
 
   const login = async (email: string, password: string) => {
-    await new Promise((r) => setTimeout(r, 1000))
-    
-    // Hardcoded demo account for testing
-    if (email === 'demo@example.com' && password === 'password123') {
-      setUser({ name: 'Demo User', email, role: 'Patient' })
-      setIsAuthenticated(true)
-      toast.success('Successfully logged in!')
-      return
-    }
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        toast.error(data.message || 'Invalid email or password');
+        throw new Error(data.message || 'Invalid credentials');
+      }
 
-    const usersRaw = localStorage.getItem(USERS_DB_KEY)
-    const users = usersRaw ? JSON.parse(usersRaw) : []
-    const foundUser = users.find((u: any) => u.email === email && u.password === password)
-    
-    if (!foundUser) {
-      toast.error('Invalid email or password')
-      throw new Error('Invalid credentials')
+      setUser({ name: data.user.name, email: data.user.email, role: data.user.role });
+      setIsAuthenticated(true);
+      localStorage.setItem(JWT_KEY, data.token);
+      toast.success('Successfully logged in!');
+    } catch (error) {
+      console.error(error);
+      throw error;
     }
-    
-    setUser({ name: foundUser.name, email: foundUser.email, role: foundUser.role })
-    setIsAuthenticated(true)
-    toast.success('Successfully logged in!')
   }
 
   const signup = async (name: string, email: string, password: string, role: string) => {
-    await new Promise((r) => setTimeout(r, 1000))
-    
-    const usersRaw = localStorage.getItem(USERS_DB_KEY)
-    const users = usersRaw ? JSON.parse(usersRaw) : []
-    
-    // Store new user credential
-    if (users.some((u: any) => u.email === email)) {
-      toast.error('Email already registered')
-      throw new Error('Email already registered')
+    try {
+      const response = await fetch(`${API_URL}/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, role })
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        toast.error(data.message || 'Email already registered');
+        throw new Error(data.message || 'Email already registered');
+      }
+
+      setUser({ name: data.user.name, email: data.user.email, role: data.user.role });
+      setIsAuthenticated(true);
+      localStorage.setItem(JWT_KEY, data.token);
+      toast.success('Account created successfully!');
+    } catch (error) {
+      console.error(error);
+      throw error;
     }
-
-    users.push({ name, email, password, role })
-    localStorage.setItem(USERS_DB_KEY, JSON.stringify(users))
-
-    setUser({ name, email, role })
-    setIsAuthenticated(true)
-    toast.success('Account created successfully!')
   }
 
   const logout = () => {
