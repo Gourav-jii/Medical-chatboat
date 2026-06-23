@@ -7,7 +7,7 @@ import {
   Activity, Calendar, Home,
   ChevronRight, Paperclip, AlertTriangle, CheckCircle,
   Clock, Shield, Star, Loader2, Stethoscope, History, Search, Info, Plus,
-  Sparkles, Pill, AlertCircle
+  Sparkles, Pill, AlertCircle, LayoutGrid, List, Trash2
 } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -208,46 +208,13 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
   { doctor: 'Dr. Anjali Gupta', specialty: 'Dermatologist', date: 'Jun 10, 2026', time: '9:00 AM', status: 'completed', avatar: 'AG' },
 ]
 
-const INITIAL_CHAT_SESSIONS: ChatSession[] = [
-  {
-    id: 'h1',
-    title: 'Headache & dizziness',
-    preview: 'Could be tension-related...',
-    time: '2 hours ago',
-    icon: 'headache',
-    messages: [
-      { id: 'c1_1', role: 'user', content: 'I have a headache since morning and feel a bit dizzy.', time: '2 hours ago' },
-      { id: 'c1_2', role: 'assistant', content: 'Headaches can have many causes including tension, dehydration, stress, or eye strain. For a persistent headache lasting more than 2 days, I recommend consulting a neurologist. Try staying hydrated, resting in a dark room, and avoiding screens. Do you have any other symptoms like nausea or light sensitivity?', time: '2 hours ago' }
-    ]
-  },
-  {
-    id: 'h2',
-    title: 'Blood pressure query',
-    preview: '118/76 is in the normal range...',
-    time: 'Yesterday',
-    icon: 'bp',
-    messages: [
-      { id: 'c2_1', role: 'user', content: 'My blood pressure reading today was 118/76. Is that good?', time: 'Yesterday' },
-      { id: 'c2_2', role: 'assistant', content: 'Your recent blood pressure reading of 118/76 mmHg is within the normal range. Keep maintaining a low-sodium diet, regular exercise, and your current medication schedule. I\'ll remind you for your next check-up.', time: 'Yesterday' }
-    ]
-  },
-  {
-    id: 'h3',
-    title: 'Medication schedule',
-    preview: 'Take Lisinopril once daily...',
-    time: '2 days ago',
-    icon: 'meds',
-    messages: [
-      { id: 'c3_1', role: 'user', content: 'When should I take my Lisinopril medication?', time: '2 days ago' },
-      { id: 'c3_2', role: 'assistant', content: 'I can help you understand your medications. Please note that I provide general information — always follow your prescriber\'s specific instructions. Lisinopril is typically taken once daily, in the morning. Would you like information about dosing schedules, potential interactions, or side effects?', time: '2 days ago' }
-    ]
-  }
-]
+const INITIAL_CHAT_SESSIONS: ChatSession[] = []
 
 const NAV_ITEMS = [
   { icon: Home, label: 'Home', id: 'home' },
   { icon: Stethoscope, label: 'Symptom Checker', id: 'symptom-checker' },
   { icon: Heart, label: 'Doctor Recommendations', id: 'doctor-recommendations' },
+  { icon: Calendar, label: 'Scheduled Consultations', id: 'scheduled-consultations' },
   { icon: History, label: 'Chat History', id: 'chat-history' },
 ]
 
@@ -271,6 +238,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [activeSection, setActiveSection] = useState('home')
   const [suggestedSpecialty, setSuggestedSpecialty] = useState<string | null>(null)
+  const [lastRecommendedSpecialty, setLastRecommendedSpecialty] = useState<string | null>(null)
 
   // Lifted States
   const API_URL = 'http://localhost:5000/api'
@@ -295,11 +263,12 @@ export default function Dashboard() {
           if (data && data.length > 0) {
             setChatSessions(data)
           } else {
-            setChatSessions(INITIAL_CHAT_SESSIONS)
+            setChatSessions([])
           }
         }
       } catch (err) {
         console.error('Failed to fetch chats', err)
+        setChatSessions([])
       } finally {
         setIsChatsLoaded(true)
       }
@@ -389,10 +358,16 @@ export default function Dashboard() {
   const initials = user?.name
     ?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() ?? 'U'
 
+  // Force scroll to top on refresh/mount so user always starts on the Home page
+  useEffect(() => {
+    window.scrollTo({ top: 0 })
+    setActiveSection('home')
+  }, [])
+
   // Scroll tracking to update the active navigation tab
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['home', 'symptom-checker', 'doctor-recommendations', 'chat-history']
+      const sections = ['home', 'symptom-checker', 'doctor-recommendations', 'scheduled-consultations', 'chat-history']
       const scrollPos = window.scrollY + 200 // Offset for header height
 
       for (const section of sections) {
@@ -483,6 +458,13 @@ export default function Dashboard() {
       })
       if (!res.ok) throw new Error('fail')
       const reply = await parseWebhookResponse(res)
+
+      // Extract recommended specialist from bot reply
+      const specialtyMatch = reply.match(/consulting\s+(?:a|an)\s+([A-Z][a-zA-Z\s]+?)(?:\.|,|\n|$)/)
+      if (specialtyMatch) {
+        setLastRecommendedSpecialty(specialtyMatch[1].trim())
+      }
+
       const finalReply = isBookingTrigger(content)
         ? `${reply}\n\n[BOOKING_SYSTEM]`
         : reply
@@ -655,6 +637,7 @@ export default function Dashboard() {
                         <InlineBookingCard
                           messageId={msg.id}
                           doctors={doctorsList}
+                          suggestedSpecialty={lastRecommendedSpecialty}
                           onConfirm={async (msgId, docName, date, time, reason) => {
                             await handleConfirmBooking(msgId, docName, date, time, reason)
                           }}
@@ -685,7 +668,7 @@ export default function Dashboard() {
             </div>
 
             {/* Quick chips */}
-            <div className="px-3 py-2 flex gap-1.5 overflow-x-auto scrollbar-none shrink-0 border-t border-gray-100 bg-white">
+            {/* <div className="px-3 py-2 flex gap-1.5 overflow-x-auto scrollbar-none shrink-0 border-t border-gray-100 bg-white">
               {['Headache', 'Fever', 'Blood pressure', 'Medication'].map(chip => (
                 <button
                   key={chip}
@@ -695,7 +678,7 @@ export default function Dashboard() {
                   {chip}
                 </button>
               ))}
-            </div>
+            </div> */}
 
             {/* Input */}
             <div className="px-3 py-3 border-t border-gray-100 bg-white shrink-0">
@@ -779,6 +762,16 @@ export default function Dashboard() {
             <DoctorRecommendationsTab doctors={doctorsList}
               suggestedSpecialty={suggestedSpecialty}
               setSuggestedSpecialty={setSuggestedSpecialty}
+              setAppointments={setAppointments}
+            />
+
+          </div>
+        </section>
+
+        {/* Scheduled Consultations Section */}
+        <section id="scheduled-consultations" className="scroll-mt-20">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden p-6">
+            <ScheduledConsultationsTab 
               appointments={appointments}
               setAppointments={setAppointments}
             />
@@ -812,6 +805,7 @@ export default function Dashboard() {
 interface InlineBookingCardProps {
   messageId: string
   doctors: Doctor[]
+  suggestedSpecialty?: string | null
   onConfirm: (
     msgId: string,
     doctorName: string,
@@ -821,8 +815,12 @@ interface InlineBookingCardProps {
   ) => Promise<void>
 }
 
-function InlineBookingCard({ messageId, doctors, onConfirm }: InlineBookingCardProps) {
-  const [selectedDoctor, setSelectedDoctor] = useState(doctors[0]?.name || '')
+function InlineBookingCard({ messageId, doctors, suggestedSpecialty, onConfirm }: InlineBookingCardProps) {
+  // Auto-select the doctor matching the AI-recommended specialty
+  const defaultDoctor = suggestedSpecialty
+    ? (doctors.find(d => d.specialty.toLowerCase().includes(suggestedSpecialty.toLowerCase())) || doctors[0])
+    : doctors[0]
+  const [selectedDoctor, setSelectedDoctor] = useState(defaultDoctor?.name || '')
   const [bookingDate, setBookingDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
   const [bookingReason, setBookingReason] = useState('')
@@ -1679,7 +1677,6 @@ function RiskMeter({ level }: { level: 'low' | 'medium' | 'high' }) {
 interface DoctorsTabProps { doctors: Doctor[], 
   suggestedSpecialty: string | null
   setSuggestedSpecialty: (spec: string | null) => void
-  appointments: Appointment[]
   setAppointments: React.Dispatch<React.SetStateAction<Appointment[]>>
 }
 
@@ -1690,15 +1687,15 @@ interface ScheduleForm {
   reason: string
 }
 
-function DoctorRecommendationsTab({ doctors, 
+function DoctorRecommendationsTab({ doctors,
   suggestedSpecialty,
   setSuggestedSpecialty,
-  appointments,
   setAppointments,
 }: DoctorsTabProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('All')
-  
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
   // Modals
   const [bookingDoc, setBookingDoc] = useState<Doctor | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -1707,7 +1704,6 @@ function DoctorRecommendationsTab({ doctors,
   const [form, setForm] = useState<ScheduleForm>({ doctor: '', date: '', time: '', reason: '' })
   const [errors, setErrors] = useState<Partial<ScheduleForm>>({})
   const [submitting, setSubmitting] = useState(false)
-  const [detailApt, setDetailApt] = useState<Appointment | null>(null)
 
   const today = new Date().toISOString().split('T')[0]
 
@@ -1778,11 +1774,7 @@ function DoctorRecommendationsTab({ doctors,
     setTimeout(() => setShowSuccess(false), 3500)
   }
 
-  const handleCancelApt = (apt: Appointment) => {
-    setAppointments((prev) =>
-      prev.map((a) => a.doctor === apt.doctor && a.date === apt.date ? { ...a, status: 'completed' } : a)
-    )
-  }
+
 
   const TIME_SLOTS = ['9:00 AM', '10:00 AM', '11:30 AM', '2:00 PM', '3:30 PM', '4:30 PM']
 
@@ -1848,87 +1840,117 @@ function DoctorRecommendationsTab({ doctors,
 
       {/* Recommended Doctors list */}
       <div className="space-y-3">
-        <h3 className="text-sm font-bold text-slate-700">Recommended Medical Specialists ({filteredDoctors.length})</h3>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredDoctors.map((doc) => (
-            <div key={doc.name} className="bg-white rounded-3xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all p-5 flex flex-col justify-between space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-700 text-sm font-extrabold flex items-center justify-center shadow-inner">
+        {/* Header with view toggle */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-slate-700">Recommended Medical Specialists ({filteredDoctors.length})</h3>
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button
+              onClick={() => setViewMode('grid')}
+              title="Grid View"
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              title="List View"
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {filteredDoctors.length === 0 ? (
+          <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center text-slate-400 text-xs">
+            No specialists found matching your search.
+          </div>
+        ) : viewMode === 'grid' ? (
+          /* ── GRID VIEW ── */
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredDoctors.map((doc) => (
+              <div key={doc.name} className="bg-white rounded-3xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all p-5 flex flex-col justify-between space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-emerald-100 text-blue-700 text-sm font-extrabold flex items-center justify-center shadow-inner">
+                      {doc.avatar}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 truncate">{doc.name}</h4>
+                      <p className="text-xs text-slate-500 font-semibold">{doc.specialty}</p>
+                    </div>
+                  </div>
+                  <span className="flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 bg-amber-50 border border-amber-200 text-amber-600 rounded-md shrink-0">
+                    <Star className="w-3 h-3 text-amber-500 fill-current" /> {doc.rating}
+                  </span>
+                </div>
+
+                <div className="text-xs text-slate-600 space-y-1 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                  <p className="flex justify-between"><span>Experience:</span> <span className="font-semibold text-slate-800">{doc.exp}</span></p>
+                  <p className="flex justify-between"><span>Location:</span> <span className="font-semibold text-slate-800">{doc.clinic}</span></p>
+                  <p className="flex justify-between"><span>Available:</span> <span className="font-semibold text-blue-600">{doc.available}</span></p>
+                </div>
+
+                <button
+                  onClick={() => handleOpenBooking(doc)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 active:scale-97 text-white text-xs font-bold py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Calendar className="w-3.5 h-3.5" /> Book Consultation
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* ── LIST VIEW ── */
+          <div className="space-y-2.5">
+            {filteredDoctors.map((doc) => (
+              <div
+                key={doc.name}
+                className="bg-white rounded-2xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all p-4 flex flex-col sm:flex-row sm:items-center gap-4"
+              >
+                {/* Avatar + Name */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-100 to-emerald-100 text-blue-700 text-sm font-extrabold flex items-center justify-center shadow-inner shrink-0">
                     {doc.avatar}
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h4 className="text-sm font-bold text-slate-900 truncate">{doc.name}</h4>
                     <p className="text-xs text-slate-500 font-semibold">{doc.specialty}</p>
                   </div>
                 </div>
-                <span className="flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 bg-amber-50 border border-amber-200 text-amber-600 rounded-md">
-                  <Star className="w-3 h-3 text-amber-500 fill-current" /> {doc.rating}
-                </span>
-              </div>
 
-              <div className="text-xs text-slate-600 space-y-1 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
-                <p className="flex justify-between"><span>Experience:</span> <span className="font-semibold text-slate-800">{doc.exp}</span></p>
-                <p className="flex justify-between"><span>Location:</span> <span className="font-semibold text-slate-800">{doc.clinic}</span></p>
-                <p className="flex justify-between"><span>Available:</span> <span className="font-semibold text-blue-600">{doc.available}</span></p>
-              </div>
-
-              <button
-                onClick={() => handleOpenBooking(doc)}
-                className="w-full bg-blue-600 hover:bg-blue-700 active:scale-97 text-white text-xs font-bold py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
-              >
-                <Calendar className="w-3.5 h-3.5" /> Book Consultation
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Scheduled appointments timeline */}
-      <div className="border-t border-slate-200 pt-6 space-y-3">
-        <h3 className="text-sm font-bold text-slate-700">Your Scheduled Consultations ({appointments.length})</h3>
-        {appointments.length === 0 ? (
-          <p className="text-xs text-slate-400 text-center py-6 bg-white border border-slate-200 rounded-3xl">No bookings scheduled yet</p>
-        ) : (
-          <div className="space-y-2.5">
-            {appointments.map((apt, idx) => (
-              <div key={idx} className="bg-white border border-slate-200 rounded-3xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-700 text-xs font-bold flex items-center justify-center shadow-inner">
-                    {apt.avatar}
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">{apt.doctor}</h4>
-                    <p className="text-[10px] text-slate-400 font-semibold">{apt.specialty} · {apt.date}</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5 bg-slate-50 inline-block px-1.5 py-0.5 rounded-md border border-slate-100">Time slot: {apt.time}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${apt.status === 'upcoming' ? 'bg-blue-50 text-blue-700' : 'bg-slate-150 text-slate-500'}`}>
-                    {apt.status === 'upcoming' ? '● Upcoming' : '✓ Completed'}
+                {/* Info pills */}
+                <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold">
+                  <span className="flex items-center gap-0.5 bg-amber-50 border border-amber-200 text-amber-600 px-2 py-0.5 rounded-md">
+                    <Star className="w-3 h-3 fill-current" /> {doc.rating}
                   </span>
-                  {apt.status === 'upcoming' && (
-                    <>
-                      <button
-                        onClick={() => setDetailApt(apt)}
-                        className="text-[10px] font-bold border border-blue-200 hover:bg-blue-50 text-blue-600 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
-                      >
-                        Details
-                      </button>
-                      <button
-                        onClick={() => handleCancelApt(apt)}
-                        className="text-[10px] font-bold border border-red-200 hover:bg-red-50 text-red-500 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  )}
+                  <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200">{doc.exp}</span>
+                  <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200 truncate max-w-[120px]">{doc.clinic}</span>
+                  <span className="bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-md">{doc.available}</span>
                 </div>
+
+                {/* Book button */}
+                <button
+                  onClick={() => handleOpenBooking(doc)}
+                  className="bg-blue-600 hover:bg-blue-700 active:scale-97 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                >
+                  <Calendar className="w-3.5 h-3.5" /> Book
+                </button>
               </div>
             ))}
           </div>
         )}
       </div>
+
+
 
       {/* ── Booking Modal ── */}
       {showModal && bookingDoc && (
@@ -2022,28 +2044,131 @@ function DoctorRecommendationsTab({ doctors,
         </div>
       )}
 
+    </div>
+  )
+}
+
+interface ScheduledConsultationsProps {
+  appointments: Appointment[]
+  setAppointments: React.Dispatch<React.SetStateAction<Appointment[]>>
+}
+
+function ScheduledConsultationsTab({ appointments, setAppointments }: ScheduledConsultationsProps) {
+  const [detailApt, setDetailApt] = useState<Appointment | null>(null)
+
+  const handleCancelApt = (apt: Appointment) => {
+    setAppointments((prev) =>
+      prev.map((a) => a.doctor === apt.doctor && a.date === apt.date ? { ...a, status: 'completed' } : a)
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-blue-600" />
+          Your Scheduled Consultations
+        </h3>
+        <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full font-bold border border-blue-200">
+          {appointments.length} Booking{appointments.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+      
+      {appointments.length === 0 ? (
+        <div className="bg-gray-50 border border-gray-200 rounded-3xl p-10 text-center text-gray-400 text-xs space-y-2">
+          <Calendar className="w-10 h-10 text-gray-300 mx-auto opacity-75" />
+          <p className="font-semibold">No bookings scheduled yet</p>
+          <p className="text-[10px] text-gray-400">You can book appointments under the specialist recommendations section.</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {appointments.map((apt, idx) => (
+            <div 
+              key={idx} 
+              className="bg-white border border-slate-200 rounded-3xl p-5 flex flex-col justify-between gap-4 shadow-2xs hover:shadow-md hover:border-blue-400 transition-all duration-200 relative group overflow-hidden"
+            >
+              {/* Visual Accent Bar */}
+              <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${apt.status === 'upcoming' ? 'bg-gradient-to-b from-blue-500 to-indigo-650' : 'bg-gradient-to-b from-slate-300 to-slate-450'}`} />
+              
+              <div className="flex items-start justify-between gap-2 pl-2">
+                <div className="flex items-center gap-3">
+                  <div className={`w-12 h-12 rounded-2xl text-sm font-extrabold flex items-center justify-center shadow-xs shrink-0 ${
+                    apt.avatar === 'RS' 
+                      ? 'bg-gradient-to-br from-red-500/10 to-red-600/15 text-red-700' 
+                      : apt.avatar === 'NS' 
+                      ? 'bg-gradient-to-br from-indigo-500/10 to-indigo-600/15 text-indigo-750' 
+                      : 'bg-gradient-to-br from-emerald-500/10 to-emerald-600/15 text-emerald-700'
+                  }`}>
+                    {apt.avatar}
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-extrabold text-slate-905 truncate">{apt.doctor}</h4>
+                    <p className="text-[10px] text-slate-450 font-semibold">{apt.specialty}</p>
+                    
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1.8 text-[10px] text-slate-500 font-semibold">
+                      <span className="bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md text-slate-600">
+                        {apt.date}
+                      </span>
+                      <span className="bg-blue-50 border border-blue-150 text-blue-600 px-2 py-0.5 rounded-md">
+                        {apt.time}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 border ${
+                  apt.status === 'upcoming' 
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                    : 'bg-slate-100 text-slate-500 border-slate-200'
+                }`}>
+                  {apt.status === 'upcoming' ? '● Upcoming' : '✓ Completed'}
+                </span>
+              </div>
+
+              {apt.status === 'upcoming' && (
+                <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                  <button
+                    onClick={() => setDetailApt(apt)}
+                    className="text-[10px] font-bold border border-slate-200 hover:bg-slate-50 hover:text-blue-600 text-slate-600 px-3.5 py-1.8 rounded-xl transition-all cursor-pointer"
+                  >
+                    Details
+                  </button>
+                  <button
+                    onClick={() => handleCancelApt(apt)}
+                    className="text-[10px] font-bold border border-red-200 hover:bg-red-500 hover:text-white hover:border-red-500 text-red-500 px-3.5 py-1.8 rounded-xl transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ── Detail Modal ── */}
       {detailApt && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm border border-slate-100">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h3 className="font-bold text-slate-900 text-sm">Consultation Summary</h3>
               <button onClick={() => setDetailApt(null)} className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-all cursor-pointer outline-none focus:outline-none">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-6 space-y-3 text-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 text-sm font-bold flex items-center justify-center">{detailApt.avatar}</div>
+            <div className="p-6 space-y-4 text-xs">
+              <div className="flex items-center gap-3 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 text-sm font-bold flex items-center justify-center shadow-inner shrink-0">{detailApt.avatar}</div>
                 <div>
                   <h4 className="font-bold text-slate-900">{detailApt.doctor}</h4>
                   <p className="text-[10px] text-slate-500 font-semibold">{detailApt.specialty}</p>
                 </div>
               </div>
-              <hr className="border-slate-100 my-2" />
-              <div className="flex justify-between"><span className="text-slate-400">Date & Time:</span> <span className="font-semibold text-slate-800">{detailApt.date} at {detailApt.time}</span></div>
-              <div className="flex justify-between"><span className="text-slate-400">Location:</span> <span className="font-semibold text-slate-800">Main Medical Complex, Suite F</span></div>
-              <div className="flex justify-between"><span className="text-slate-400">Status:</span> <span className="font-semibold text-blue-600 capitalize">{detailApt.status}</span></div>
+              <div className="space-y-2 border-t border-slate-100 pt-3">
+                <div className="flex justify-between"><span className="text-slate-400">Date & Time:</span> <span className="font-semibold text-slate-800">{detailApt.date} at {detailApt.time}</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">Location:</span> <span className="font-semibold text-slate-800">Main Medical Complex, Suite F</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">Status:</span> <span className="font-semibold text-blue-600 capitalize">{detailApt.status}</span></div>
+              </div>
             </div>
             <div className="px-6 pb-6">
               <button onClick={() => setDetailApt(null)} className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl cursor-pointer">Close</button>
@@ -2051,7 +2176,6 @@ function DoctorRecommendationsTab({ doctors,
           </div>
         </div>
       )}
-
     </div>
   )
 }
@@ -2075,39 +2199,163 @@ function ChatHistoryTab({
   startNewChat,
 }: HistoryTabProps) {
   const [selectedSessionDetail, setSelectedSessionDetail] = useState<ChatSession | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false)
+
+  const toggleSelectMode = () => {
+    setSelectMode((v) => !v)
+    setSelectedIds(new Set())
+    setConfirmDeleteId(null)
+    setShowBulkConfirm(false)
+  }
+
+  const toggleSelect = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const selectAll = () => {
+    if (selectedIds.size === chatSessions.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(chatSessions.map((s) => s.id)))
+    }
+  }
+
+  const handleBulkDelete = () => {
+    const deletingActive = selectedIds.has(activeSessionId ?? '')
+    setChatSessions((prev) => prev.filter((s) => !selectedIds.has(s.id)))
+    setSelectedIds(new Set())
+    setSelectMode(false)
+    setShowBulkConfirm(false)
+    if (deletingActive) startNewChat()
+  }
 
   const handleResumeSession = (session: ChatSession) => {
+    if (selectMode) return
     setFloatMsgs(session.messages)
     setActiveSessionId(session.id)
     setShowFloatingChat(true)
   }
 
-  const handleDeleteSession = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (confirm('Are you sure you want to delete this chat history session permanently?')) {
-      setChatSessions((prev) => prev.filter((s) => s.id !== id))
-      if (activeSessionId === id) {
-        startNewChat()
-      }
-    }
+  const handleDeleteSession = (id: string) => {
+    setChatSessions((prev) => prev.filter((s) => s.id !== id))
+    setConfirmDeleteId(null)
+    if (activeSessionId === id) startNewChat()
   }
+
+  const allSelected = chatSessions.length > 0 && selectedIds.size === chatSessions.length
 
   return (
     <div className="p-5 sm:p-8 space-y-5">
 
-      {/* Header action */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h3 className="text-base font-bold text-gray-800">Your Consultation Dialogues</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Manage and resume past chatbot consultations ({chatSessions.length})</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Manage and resume past chatbot consultations ({chatSessions.length})
+          </p>
         </div>
-        <button
-          onClick={startNewChat}
-          className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-        >
-          <Plus className="w-4 h-4" /> New Dialogue
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Select / Cancel toggle */}
+          {chatSessions.length > 0 && (
+            <button
+              onClick={toggleSelectMode}
+              className={`text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border ${
+                selectMode
+                  ? 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200'
+                  : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {selectMode ? <X className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
+              {selectMode ? 'Cancel' : 'Select'}
+            </button>
+          )}
+          <button
+            onClick={startNewChat}
+            className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            <Plus className="w-4 h-4" /> New Dialogue
+          </button>
+        </div>
       </div>
+
+      {/* ── Bulk Action Bar (shown when in select mode) ── */}
+      {selectMode && chatSessions.length > 0 && (
+        <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            {/* Select All checkbox */}
+            <button
+              onClick={selectAll}
+              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                allSelected
+                  ? 'bg-blue-600 border-blue-600'
+                  : selectedIds.size > 0
+                  ? 'bg-blue-200 border-blue-400'
+                  : 'bg-white border-gray-300 hover:border-blue-400'
+              }`}
+            >
+              {allSelected && <CheckCircle className="w-3.5 h-3.5 text-white fill-current" />}
+              {!allSelected && selectedIds.size > 0 && (
+                <span className="w-2 h-0.5 bg-blue-600 rounded-full" />
+              )}
+            </button>
+            <span className="text-xs font-semibold text-blue-700">
+              {selectedIds.size === 0
+                ? 'Select sessions to delete'
+                : `${selectedIds.size} of ${chatSessions.length} selected`}
+            </span>
+          </div>
+
+          {selectedIds.size > 0 && (
+            <button
+              onClick={() => setShowBulkConfirm(true)}
+              className="text-xs font-bold bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer transition-all shadow-sm"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete Selected ({selectedIds.size})
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Bulk Delete Confirmation Modal ── */}
+      {showBulkConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-gray-200 p-6 space-y-5">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
+                <Trash2 className="w-7 h-7 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900">Delete {selectedIds.size} session{selectedIds.size > 1 ? 's' : ''}?</h3>
+                <p className="text-xs text-gray-400 mt-1">This will permanently remove the selected chat sessions. This action cannot be undone.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowBulkConfirm(false)}
+                className="flex-1 py-2.5 border border-gray-200 hover:bg-gray-50 text-xs font-semibold rounded-xl text-gray-600 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-xl cursor-pointer shadow-sm transition-colors"
+              >
+                Delete All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Grid of sessions */}
       {chatSessions.length === 0 ? (
@@ -2117,47 +2365,108 @@ function ChatHistoryTab({
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {chatSessions.map((session) => (
-            <div
-              key={session.id}
-              onClick={() => handleResumeSession(session)}
-              className="bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-2xl p-4 cursor-pointer flex flex-col justify-between space-y-3 group transition-all hover:shadow-md"
-            >
-              <div className="flex items-start gap-3 justify-between">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="text-2xl shrink-0 flex items-center justify-center">{renderSessionIcon(session.icon)}</span>
-                  <div className="min-w-0">
-                    <h4 className="text-xs font-bold text-gray-800 truncate group-hover:text-blue-700 transition-colors">{session.title}</h4>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{session.time}</p>
+          {chatSessions.map((session) => {
+            const isSelected = selectedIds.has(session.id)
+            return (
+              <div
+                key={session.id}
+                onClick={() => selectMode ? toggleSelect(session.id, { stopPropagation: () => {} } as React.MouseEvent) : handleResumeSession(session)}
+                className={`border rounded-2xl p-4 cursor-pointer flex flex-col justify-between space-y-3 group transition-all hover:shadow-md relative ${
+                  selectMode && isSelected
+                    ? 'bg-blue-50 border-blue-400 shadow-sm'
+                    : selectMode
+                    ? 'bg-gray-50 border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
+                    : 'bg-gray-50 hover:bg-blue-50 border-gray-200 hover:border-blue-300'
+                }`}
+              >
+                <div className="flex items-start gap-3 justify-between">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {/* Checkbox in select mode, icon otherwise */}
+                    {selectMode ? (
+                      <button
+                        onClick={(e) => toggleSelect(session.id, e)}
+                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                          isSelected ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300 hover:border-blue-400'
+                        }`}
+                      >
+                        {isSelected && <CheckCircle className="w-3.5 h-3.5 text-white fill-current" />}
+                      </button>
+                    ) : (
+                      <span className="text-2xl shrink-0 flex items-center justify-center">{renderSessionIcon(session.icon)}</span>
+                    )}
+                    <div className="min-w-0">
+                      <h4 className={`text-xs font-bold truncate transition-colors ${isSelected ? 'text-blue-700' : 'text-gray-800 group-hover:text-blue-700'}`}>
+                        {session.title}
+                      </h4>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{session.time}</p>
+                    </div>
                   </div>
+
+                  {/* Single delete (only when NOT in select mode) */}
+                  {!selectMode && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(session.id) }}
+                      className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                      title="Delete Session"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
-                <button
-                  onClick={(e) => handleDeleteSession(session.id, e)}
-                  className="p-1 text-gray-300 hover:text-red-500 rounded-lg transition-colors cursor-pointer shrink-0"
-                  title="Delete Session"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
 
-              <p className="text-[11px] text-gray-500 leading-relaxed italic bg-white p-2.5 rounded-xl border border-gray-100 truncate">
-                "{session.preview}"
-              </p>
+                <p className="text-[11px] text-gray-500 leading-relaxed italic bg-white p-2.5 rounded-xl border border-gray-100 truncate">
+                  "{session.preview}"
+                </p>
 
-              <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                <span className="text-[10px] text-gray-400 font-semibold">{session.messages.length} messages</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setSelectedSessionDetail(session)
-                  }}
-                  className="text-[10px] font-bold border border-gray-200 hover:bg-white text-gray-500 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
-                >
-                  View Logs
-                </button>
+                <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                  <span className="text-[10px] text-gray-400 font-semibold">{session.messages.length} messages</span>
+                  {!selectMode && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setSelectedSessionDetail(session) }}
+                      className="text-[10px] font-bold border border-gray-200 hover:bg-white text-gray-500 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                    >
+                      View Logs
+                    </button>
+                  )}
+                  {selectMode && (
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isSelected ? 'bg-blue-100 text-blue-600' : 'text-gray-400'}`}>
+                      {isSelected ? '✓ Selected' : 'Tap to select'}
+                    </span>
+                  )}
+                </div>
+
+                {/* Inline single-delete confirmation overlay */}
+                {!selectMode && confirmDeleteId === session.id && (
+                  <div
+                    className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-3 p-4 z-10 border border-red-200 shadow-lg"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                      <Trash2 className="w-5 h-5 text-red-500" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs font-bold text-gray-800">Delete this session?</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">This action cannot be undone.</p>
+                    </div>
+                    <div className="flex gap-2 w-full">
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="flex-1 py-1.5 text-[10px] font-bold border border-gray-200 hover:bg-gray-50 text-gray-500 rounded-lg cursor-pointer transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSession(session.id)}
+                        className="flex-1 py-1.5 text-[10px] font-bold bg-red-500 hover:bg-red-600 text-white rounded-lg cursor-pointer transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -2280,10 +2589,10 @@ function HomeTab({ scrollToSection, appointments, chatSessions, setShowFloatingC
             <p className="text-xs text-gray-400 py-4">No upcoming appointments.</p>
           )}
           <button
-            onClick={() => scrollToSection('doctor-recommendations')}
+            onClick={() => scrollToSection('scheduled-consultations')}
             className="mt-4 text-blue-600 hover:text-blue-700 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
           >
-            Manage Appointments <ChevronRight className="w-3.5 h-3.5" />
+            View Consultations <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -2311,29 +2620,6 @@ function HomeTab({ scrollToSection, appointments, chatSessions, setShowFloatingC
           >
             View History <ChevronRight className="w-3.5 h-3.5" />
           </button>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="space-y-3">
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Quick Actions</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { label: 'Check Symptoms', icon: Stethoscope, id: 'symptom-checker', bg: 'bg-purple-100', text: 'text-purple-600', hover: 'hover:bg-purple-50' },
-            { label: 'Book Consultations', icon: Calendar, id: 'doctor-recommendations', bg: 'bg-blue-100', text: 'text-blue-600', hover: 'hover:bg-blue-50' },
-            { label: 'Dialogue Logs', icon: History, id: 'chat-history', bg: 'bg-blue-100', text: 'text-blue-600', hover: 'hover:bg-blue-50' },
-          ].map((action) => (
-            <button
-              key={action.id}
-              onClick={() => scrollToSection(action.id)}
-              className={`bg-white border border-gray-200 ${action.hover} hover:shadow-md p-6 rounded-2xl cursor-pointer text-center flex flex-col items-center justify-center gap-3 transition-all duration-200 group hover:-translate-y-0.5`}
-            >
-              <div className={`w-12 h-12 rounded-full ${action.bg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                <action.icon className={`w-6 h-6 ${action.text}`} />
-              </div>
-              <span className="text-xs font-bold text-gray-700">{action.label}</span>
-            </button>
-          ))}
         </div>
       </div>
     </div>
