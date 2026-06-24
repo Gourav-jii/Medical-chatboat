@@ -220,10 +220,24 @@ const NAV_ITEMS = [
   { icon: History, label: 'Chat History', id: 'chat-history' },
 ]
 
+function detectSessionIcon(content: string): string {
+  const lower = content.toLowerCase()
+  if (lower.includes('headache') || lower.includes('fever') || lower.includes('symptom') || lower.includes('cough') || lower.includes('pain') || lower.includes('sick')) {
+    return 'headache'
+  }
+  if (lower.includes('bp') || lower.includes('blood pressure') || lower.includes('heart') || lower.includes('hypertension')) {
+    return 'bp'
+  }
+  if (lower.includes('med') || lower.includes('pill') || lower.includes('drug') || lower.includes('metformin') || lower.includes('lisinopril') || lower.includes('vitamin') || lower.includes('dose')) {
+    return 'meds'
+  }
+  return 'chat'
+}
+
 function renderSessionIcon(icon: string) {
   switch (icon) {
     case 'headache':
-      return <AlertCircle className="w-5 h-5 text-purple-550 shrink-0" />
+      return <AlertCircle className="w-5 h-5 text-purple-600 shrink-0" />
     case 'bp':
       return <Heart className="w-5 h-5 text-rose-500 fill-current shrink-0" />
     case 'meds':
@@ -332,7 +346,7 @@ export default function Dashboard() {
     toast.success(`Appointment booked with ${doctorName}!`)
 
     // 7. Update message text in chat
-    const successText = `✓ **Appointment Booked Successfully!**\n\n**Doctor:** ${doctorName} (${doc.specialty})\n**Date:** ${formattedDate}\n**Time:** ${time}\n**Reason:** ${reason || 'General consultation'}\n\nConfirmation sent. You can view this booking in your overview dashboard.`
+    const successText = `[BOOKING_SUCCESS]\n✓ **Appointment Booked Successfully!**\n\n**Doctor:** ${doctorName} (${doc.specialty})\n**Date:** ${formattedDate}\n**Time:** ${time}\n**Reason:** ${reason || 'General consultation'}\n\nConfirmation sent. You can view this booking in your overview dashboard.`
 
     setFloatMsgs((prev) =>
       prev.map((m) => (m.id === msgId ? { ...m, content: successText } : m))
@@ -429,7 +443,7 @@ export default function Dashboard() {
         title: content.length > 28 ? content.slice(0, 25) + '...' : content,
         preview: content.slice(0, 40) + '...',
         time: 'Just now',
-        icon: 'chat',
+        icon: detectSessionIcon(content),
         messages: [...floatMsgs, userMsg]
       }
       setChatSessions((prev) => [newSession, ...prev])
@@ -640,6 +654,8 @@ export default function Dashboard() {
                           }}
                         />
                       </div>
+                    ) : msg.content.includes('[BOOKING_SUCCESS]') ? (
+                      <BookingSuccessCard content={msg.content} />
                     ) : (
                       msg.content
                     )}
@@ -957,6 +973,51 @@ function InlineBookingCard({ messageId, doctors, suggestedSpecialty, onConfirm }
   )
 }
 
+function BookingSuccessCard({ content }: { content: string }) {
+  const docMatch = content.match(/\*\*Doctor:\*\*\s*(.+)/)
+  const dateMatch = content.match(/\*\*Date:\*\*\s*(.+)/)
+  const timeMatch = content.match(/\*\*Time:\*\*\s*(.+)/)
+  const reasonMatch = content.match(/\*\*Reason:\*\*\s*(.+)/)
+
+  const doctor = docMatch ? docMatch[1].trim() : ''
+  const date = dateMatch ? dateMatch[1].trim() : ''
+  const time = timeMatch ? timeMatch[1].trim() : ''
+  const reason = reasonMatch ? reasonMatch[1].trim() : ''
+
+  return (
+    <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-slate-800 space-y-3.5 shadow-2xs max-w-full text-xs text-left animate-fadeIn">
+      <div className="border-b border-emerald-200 pb-2">
+        <p className="font-bold text-emerald-800 flex items-center gap-1.5 text-[13px]">
+          <CheckCircle className="w-4 h-4 text-emerald-600 animate-pulse" /> Appointment Booked Successfully!
+        </p>
+      </div>
+
+      <div className="space-y-2.5">
+        <div className="flex justify-between border-b border-slate-100 pb-1.5">
+          <span className="font-semibold text-slate-500">Doctor</span>
+          <span className="font-bold text-slate-800">{doctor}</span>
+        </div>
+        <div className="flex justify-between border-b border-slate-100 pb-1.5">
+          <span className="font-semibold text-slate-500">Date</span>
+          <span className="font-bold text-slate-800">{date}</span>
+        </div>
+        <div className="flex justify-between border-b border-slate-100 pb-1.5">
+          <span className="font-semibold text-slate-500">Time</span>
+          <span className="font-bold text-slate-800">{time}</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="font-semibold text-slate-500">Reason</span>
+          <span className="text-slate-700 bg-white border border-slate-200 rounded-xl px-3 py-2 leading-relaxed break-words">{reason || 'General consultation'}</span>
+        </div>
+      </div>
+
+      <div className="bg-emerald-100/50 border border-emerald-200/50 rounded-xl p-2.5 text-center text-[10px] text-emerald-800 font-semibold leading-relaxed">
+        Confirmation email/SMS sent. You can manage this booking anytime under the &ldquo;Scheduled Consultations&rdquo; section.
+      </div>
+    </div>
+  )
+}
+
 // ── 1. AI Health Assistant Tab ────────────────────────────────────────────────
 interface ChatTabProps {
   messages: Message[]
@@ -1016,7 +1077,7 @@ export function AIHealthAssistantTab({
         title: content.length > 28 ? content.slice(0, 25) + '...' : content,
         preview: content.slice(0, 40) + '...',
         time: 'Just now',
-        icon: 'chat',
+        icon: detectSessionIcon(content),
         messages: [...messages, userMsg]
       }
       setChatSessions((prev) => [newSession, ...prev])
@@ -1182,6 +1243,8 @@ export function AIHealthAssistantTab({
                         }}
                       />
                     </div>
+                  ) : msg.content.includes('[BOOKING_SUCCESS]') ? (
+                    <BookingSuccessCard content={msg.content} />
                   ) : (
                     msg.content
                   )}
@@ -1691,7 +1754,8 @@ function DoctorRecommendationsTab({ doctors,
 }: DoctorsTabProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('All')
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
+  const [showAll, setShowAll] = useState(false)
 
   // Modals
   const [bookingDoc, setBookingDoc] = useState<Doctor | null>(null)
@@ -1728,6 +1792,8 @@ function DoctorRecommendationsTab({ doctors,
     const matchSpecialty = selectedSpecialty === 'All' || doc.specialty === selectedSpecialty
     return matchSearch && matchSpecialty
   })
+
+  const visibleDoctors = showAll ? filteredDoctors : filteredDoctors.slice(0, 5)
 
   const handleOpenBooking = (doc: Doctor) => {
     setBookingDoc(doc)
@@ -1873,7 +1939,7 @@ function DoctorRecommendationsTab({ doctors,
         ) : viewMode === 'grid' ? (
           /* ── GRID VIEW ── */
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredDoctors.map((doc) => (
+            {visibleDoctors.map((doc) => (
               <div key={doc.name} className="bg-white rounded-3xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all p-5 flex flex-col justify-between space-y-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
@@ -1908,7 +1974,7 @@ function DoctorRecommendationsTab({ doctors,
         ) : (
           /* ── LIST VIEW ── */
           <div className="space-y-2.5">
-            {filteredDoctors.map((doc) => (
+            {visibleDoctors.map((doc) => (
               <div
                 key={doc.name}
                 className="bg-white rounded-2xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all p-4 flex flex-col sm:flex-row sm:items-center gap-4"
@@ -1943,6 +2009,17 @@ function DoctorRecommendationsTab({ doctors,
                 </button>
               </div>
             ))}
+          </div>
+        )}
+
+        {filteredDoctors.length > 5 && (
+          <div className="flex justify-center pt-2">
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="text-xs font-bold bg-white hover:bg-slate-50 text-blue-600 border border-slate-200 hover:border-blue-200 px-5 py-2.5 rounded-xl transition-all cursor-pointer shadow-2xs"
+            >
+              {showAll ? 'See Less' : `See More (${filteredDoctors.length - 5} more)`}
+            </button>
           </div>
         )}
       </div>
@@ -2200,6 +2277,29 @@ function ChatHistoryTab({
   const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showBulkConfirm, setShowBulkConfirm] = useState(false)
+  const [showAll, setShowAll] = useState(false)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('All')
+
+  const categories = ['All', 'Symptoms', 'Cardiology/BP', 'Medications', 'General Chat']
+
+  const filteredSessions = chatSessions.filter((session) => {
+    const matchSearch =
+      session.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      session.preview.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    let categoryKey = 'General Chat'
+    if (session.icon === 'headache') categoryKey = 'Symptoms'
+    else if (session.icon === 'bp') categoryKey = 'Cardiology/BP'
+    else if (session.icon === 'meds') categoryKey = 'Medications'
+
+    const matchCategory = selectedCategory === 'All' || categoryKey === selectedCategory
+
+    return matchSearch && matchCategory
+  })
+
+  const visibleSessions = showAll ? filteredSessions : filteredSessions.slice(0, 5)
 
   const toggleSelectMode = () => {
     setSelectMode((v) => !v)
@@ -2218,10 +2318,10 @@ function ChatHistoryTab({
   }
 
   const selectAll = () => {
-    if (selectedIds.size === chatSessions.length) {
+    if (selectedIds.size === filteredSessions.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(chatSessions.map((s) => s.id)))
+      setSelectedIds(new Set(filteredSessions.map((s) => s.id)))
     }
   }
 
@@ -2247,7 +2347,7 @@ function ChatHistoryTab({
     if (activeSessionId === id) startNewChat()
   }
 
-  const allSelected = chatSessions.length > 0 && selectedIds.size === chatSessions.length
+  const allSelected = filteredSessions.length > 0 && selectedIds.size === filteredSessions.length
 
   return (
     <div className="p-5 sm:p-8 space-y-5">
@@ -2257,10 +2357,37 @@ function ChatHistoryTab({
         <div>
           <h3 className="text-base font-bold text-gray-800">Your Consultation Dialogues</h3>
           <p className="text-xs text-gray-400 mt-0.5">
-            Manage and resume past chatbot consultations ({chatSessions.length})
+            Manage and resume past chatbot consultations ({filteredSessions.length})
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Grid / List Switcher */}
+          {chatSessions.length > 0 && (
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 mr-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                title="Grid View"
+                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                  viewMode === 'grid'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                title="List View"
+                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                  viewMode === 'list'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           {/* Select / Cancel toggle */}
           {chatSessions.length > 0 && (
             <button
@@ -2284,8 +2411,40 @@ function ChatHistoryTab({
         </div>
       </div>
 
+      {/* Search and Category Filter (Same style as Doctor section) */}
+      {chatSessions.length > 0 && (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 space-y-4">
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-2xl focus-within:border-blue-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/10">
+            <Search className="w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search dialogues by title or content preview..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full text-xs bg-transparent outline-none text-slate-800 placeholder-slate-400"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`text-[11px] font-semibold px-3.5 py-1.8 rounded-xl border transition-all cursor-pointer whitespace-nowrap shadow-2xs ${
+                  selectedCategory === cat
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-blue-400 hover:bg-blue-50'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Bulk Action Bar (shown when in select mode) ── */}
-      {selectMode && chatSessions.length > 0 && (
+      {selectMode && filteredSessions.length > 0 && (
         <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             {/* Select All checkbox */}
@@ -2307,7 +2466,7 @@ function ChatHistoryTab({
             <span className="text-xs font-semibold text-blue-700">
               {selectedIds.size === 0
                 ? 'Select sessions to delete'
-                : `${selectedIds.size} of ${chatSessions.length} selected`}
+                : `${selectedIds.size} of ${filteredSessions.length} selected`}
             </span>
           </div>
 
@@ -2358,11 +2517,19 @@ function ChatHistoryTab({
       {chatSessions.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center text-gray-400 space-y-3">
           <History className="w-10 h-10 text-gray-300 mx-auto" />
-          <p className="text-xs">No saved dialogues found yet.</p>
+          <p className="text-xs font-semibold">No saved dialogues found yet.</p>
+          <p className="text-[10px] text-gray-400">Describe your symptoms to the AI assistant to start a dialogue.</p>
         </div>
-      ) : (
+      ) : filteredSessions.length === 0 ? (
+        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center text-gray-400 space-y-3">
+          <Search className="w-10 h-10 text-gray-300 mx-auto" />
+          <p className="text-xs font-semibold">No saved dialogues match your search or filter.</p>
+          <p className="text-[10px] text-gray-400">Try adjusting your keywords or category selection above.</p>
+        </div>
+      ) : viewMode === 'grid' ? (
+        /* ── GRID VIEW ── */
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {chatSessions.map((session) => {
+          {visibleSessions.map((session) => {
             const isSelected = selectedIds.has(session.id)
             return (
               <div
@@ -2391,7 +2558,7 @@ function ChatHistoryTab({
                     ) : (
                       <span className="text-2xl shrink-0 flex items-center justify-center">{renderSessionIcon(session.icon)}</span>
                     )}
-                    <div className="min-w-0">
+                    <div className="min-w-0 text-left">
                       <h4 className={`text-xs font-bold truncate transition-colors ${isSelected ? 'text-blue-700' : 'text-gray-800 group-hover:text-blue-700'}`}>
                         {session.title}
                       </h4>
@@ -2411,7 +2578,7 @@ function ChatHistoryTab({
                   )}
                 </div>
 
-                <p className="text-[11px] text-gray-500 leading-relaxed italic bg-white p-2.5 rounded-xl border border-gray-100 truncate">
+                <p className="text-[11px] text-gray-500 leading-relaxed italic bg-white p-2.5 rounded-xl border border-gray-100 truncate text-left">
                   "{session.preview}"
                 </p>
 
@@ -2420,7 +2587,7 @@ function ChatHistoryTab({
                   {!selectMode && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setSelectedSessionDetail(session) }}
-                      className="text-[10px] font-bold border border-gray-200 hover:bg-white text-gray-500 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                      className="text-[10px] font-bold border border-gray-200 hover:bg-white text-slate-500 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
                     >
                       View Logs
                     </button>
@@ -2464,6 +2631,130 @@ function ChatHistoryTab({
               </div>
             )
           })}
+        </div>
+      ) : (
+        /* ── LIST VIEW ── */
+        <div className="flex flex-col gap-3">
+          {visibleSessions.map((session) => {
+            const isSelected = selectedIds.has(session.id)
+            return (
+              <div
+                key={session.id}
+                onClick={() => selectMode ? toggleSelect(session.id, { stopPropagation: () => {} } as React.MouseEvent) : handleResumeSession(session)}
+                className={`border rounded-2xl p-4 cursor-pointer flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 group transition-all hover:shadow-xs relative ${
+                  selectMode && isSelected
+                    ? 'bg-blue-50 border-blue-400 shadow-2xs'
+                    : selectMode
+                    ? 'bg-gray-50 border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
+                    : 'bg-gray-50 hover:bg-blue-50 border-gray-200 hover:border-blue-300'
+                }`}
+              >
+                {/* Left Side: Checkbox/Icon & Details */}
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  {/* Checkbox in select mode, icon otherwise */}
+                  {selectMode ? (
+                    <button
+                      onClick={(e) => toggleSelect(session.id, e)}
+                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                        isSelected ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300 hover:border-blue-400'
+                      }`}
+                    >
+                      {isSelected && <CheckCircle className="w-3.5 h-3.5 text-white fill-current" />}
+                    </button>
+                  ) : (
+                    <div className="w-10 h-10 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-xl shrink-0 shadow-2xs group-hover:border-blue-200">
+                      {renderSessionIcon(session.icon)}
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1 text-left">
+                    <div className="flex flex-wrap items-baseline gap-x-2.5">
+                      <h4 className={`text-xs font-bold truncate transition-colors ${isSelected ? 'text-blue-700' : 'text-gray-800 group-hover:text-blue-700'}`}>
+                        {session.title}
+                      </h4>
+                      <span className="text-[10px] text-gray-400 font-semibold">{session.messages.length} messages</span>
+                    </div>
+                    <p className="text-[11px] text-gray-400 leading-normal truncate mt-1">
+                      {session.preview}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right Side: Metadata and Actions */}
+                <div className="flex items-center gap-4 justify-between sm:justify-end shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-150">
+                  <span className="text-[10px] text-gray-400 font-semibold">{session.time}</span>
+                  
+                  <div className="flex items-center gap-2">
+                    {!selectMode && (
+                      <>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSelectedSessionDetail(session) }}
+                          className="text-[10px] font-bold border border-gray-200 hover:border-slate-300 hover:bg-white text-gray-500 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                        >
+                          View Logs
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(session.id) }}
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-55 rounded-lg transition-colors cursor-pointer"
+                          title="Delete Session"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                    {selectMode && (
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${isSelected ? 'bg-blue-100 text-blue-600' : 'text-gray-400'}`}>
+                        {isSelected ? '✓ Selected' : 'Tap to select'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Inline single-delete confirmation overlay */}
+                {!selectMode && confirmDeleteId === session.id && (
+                  <div
+                    className="absolute inset-0 bg-white/95 backdrop-blur-xs rounded-2xl flex items-center justify-between gap-4 px-6 z-10 border border-red-200 shadow-md animate-fadeIn"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                        <Trash2 className="w-4.5 h-4.5 text-red-500" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs font-bold text-gray-800">Delete this session?</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">This action cannot be undone.</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="px-3.5 py-1.5 text-[10px] font-bold border border-gray-200 hover:bg-gray-50 text-gray-500 rounded-lg cursor-pointer transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSession(session.id)}
+                        className="px-3.5 py-1.5 text-[10px] font-bold bg-red-500 hover:bg-red-600 text-white rounded-lg cursor-pointer transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {filteredSessions.length > 5 && (
+        <div className="flex justify-center pt-2">
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="text-xs font-bold bg-white hover:bg-slate-50 text-blue-600 border border-slate-200 hover:border-blue-200 px-5 py-2.5 rounded-xl transition-all cursor-pointer shadow-2xs"
+          >
+            {showAll ? 'See Less' : `See More (${filteredSessions.length - 5} more)`}
+          </button>
         </div>
       )}
 
