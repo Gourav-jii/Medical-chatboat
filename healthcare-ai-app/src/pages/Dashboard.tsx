@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { toast } from 'react-hot-toast'
+import HealFlowLogo from '../components/HealFlowLogo'
 import {
   Heart, Send, Bot, User as UserIcon, LogOut, X, MessageCircle,
   Activity, Calendar, Home,
@@ -525,12 +526,7 @@ export default function Dashboard() {
       {/* ── FIXED TOP HEADER ─────────────────────────────────── */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 via-blue-500 to-emerald-500 shadow-lg px-4 sm:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-md">
-            <Heart className="w-5 h-5 text-blue-600" fill="currentColor" />
-          </div>
-          <span className="text-white font-extrabold text-xl tracking-tight">MediAI</span>
-        </div>
+        <HealFlowLogo lightMode={true} />
 
         {/* Desktop Nav */}
         <nav className="hidden lg:flex items-center gap-1 bg-white/20 backdrop-blur-sm p-1 rounded-2xl border border-white/30">

@@ -7,13 +7,13 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  Heart,
   Loader2,
   Lock,
   Mail,
   User,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import HealFlowLogo from '../components/HealFlowLogo'
 
 interface FormErrors {
   name?: string
@@ -149,14 +149,8 @@ export default function SignupPage() {
 
       <div className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <Link to="/" className="inline-flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 text-white shadow-lg shadow-blue-200">
-              <Heart className="h-5 w-5" fill="currentColor" />
-            </div>
-            <div className="text-left">
-              <p className="text-base font-extrabold tracking-tight text-slate-900">MediAssist AI</p>
-              <p className="text-[11px] font-medium text-slate-500">Create your secure health profile</p>
-            </div>
+          <Link to="/">
+            <HealFlowLogo />
           </Link>
 
           <Link
@@ -171,12 +165,10 @@ export default function SignupPage() {
         <div className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.1)] backdrop-blur-2xl sm:p-8">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 text-white shadow-lg shadow-blue-200">
-                <Heart className="h-5 w-5" fill="currentColor" />
-              </div>
+              <HealFlowLogo showText={false} iconSize="h-6 w-6" className="h-12 w-12 shrink-0" />
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Create account</p>
-                <h2 className="text-3xl font-black tracking-tight text-slate-900">Join MediAssist AI</h2>
+                <h2 className="text-3xl font-black tracking-tight text-slate-900">Join HealFlow</h2>
               </div>
             </div>
           </div>

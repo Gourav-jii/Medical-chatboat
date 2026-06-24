@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
+import HealFlowLogo from '../components/HealFlowLogo'
 
 type Icon = ComponentType<{ className?: string }>
 
@@ -254,13 +255,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 border-b border-white/60 bg-white/75 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <button type="button" onClick={() => navigateToSection('hero')} className="flex items-center gap-3 text-left">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 text-white shadow-lg shadow-blue-200">
-              <Heart className="h-5 w-5" fill="currentColor" />
-            </div>
-            <div>
-              <p className="text-base font-extrabold tracking-tight text-slate-900 sm:text-lg">MediAssist AI</p>
-              <p className="text-[11px] font-medium text-slate-500">AI-Powered Medical Recommendation Chatbot</p>
-            </div>
+            <HealFlowLogo />
           </button>
 
           <nav className="hidden items-center gap-1 rounded-full border border-slate-200 bg-white/80 p-1 shadow-sm lg:flex">
@@ -355,12 +350,11 @@ export default function LandingPage() {
               </div>
 
               <h1 className="mt-5 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-                Your AI-Powered Healthcare Assistant
+                Your companion for clear, reassuring health guidance.
               </h1>
 
               <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
-                Get symptom-based health guidance, medicine information, and personalized healthcare recommendations
-                instantly.
+                Understand symptoms, explore medicine insights, and connect with trusted doctors in a supportive, conversational experience.
               </p>
 
               <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
@@ -385,9 +379,9 @@ export default function LandingPage() {
 
         <section id="features" className="scroll-mt-28 py-12 sm:py-14">
           <SectionHeading
-            eyebrow="Core Capabilities"
-            title="Everything a modern healthcare chatbot should feel like"
-            description="MediAssist AI brings together triage, medicine guidance, doctor recommendations, and consultation history in one polished experience."
+            eyebrow="How We Help You"
+            title="A supportive companion for your health journey"
+            description="HealFlow brings together triage, medicine guidance, doctor recommendations, and consultation history in one polished, reassuring experience."
           />
 
           <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -441,7 +435,7 @@ export default function LandingPage() {
         <section id="why-choose-us" className="scroll-mt-28 py-12 sm:py-14">
           <SectionHeading
             eyebrow="Trust Signals"
-            title="Why people choose MediAssist AI"
+            title="Why people choose HealFlow"
             description="The product balances speed, clarity, and safety so it feels like a dependable healthcare companion."
           />
 
@@ -485,7 +479,7 @@ export default function LandingPage() {
           <SectionHeading
             eyebrow="Contact"
             title="Have a question or want a demo?"
-            description="A brighter contact area inspired by the footer layout you shared, but reworked for MediAssist AI."
+            description="A warm contact area designed to keep support simple, friendly, and accessible."
           />
 
           <div className="mt-8 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
@@ -499,14 +493,13 @@ export default function LandingPage() {
                 Let&apos;s make care feel simpler.
               </h3>
               <p className="mt-3 max-w-xl text-sm leading-7 text-slate-600 sm:text-base">
-                Inspired by the footer layout you shared, but reimagined in clean healthcare colors with a softer,
-                more premium feel.
+                We are here to support your wellness journey. Reach out to our compassionate team with any questions or feedback.
               </p>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">Email</p>
-                  <p className="mt-2 text-sm font-semibold text-slate-900">support@mediassist.ai</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900">support@healflow.com</p>
                   <p className="mt-1 text-xs text-slate-500">General support and product questions</p>
                 </div>
                 <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-4">
@@ -629,17 +622,9 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr_0.8fr_1fr]">
             <div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 text-white shadow-lg shadow-blue-200">
-                  <Heart className="h-5 w-5" fill="currentColor" />
-                </div>
-                <div>
-                  <p className="text-sm font-extrabold tracking-tight text-slate-900">MediAssist AI</p>
-                  <p className="text-[11px] text-slate-500">Smart healthcare recommendations</p>
-                </div>
-              </div>
+              <HealFlowLogo />
               <p className="mt-4 max-w-sm text-sm leading-7 text-slate-600">
-                A polished AI medical recommendation chatbot built for modern, professional product experiences.
+                A warm and reassuring health companion, connecting you with clarity and trusted medical professionals.
               </p>
             </div>
 
@@ -678,7 +663,7 @@ export default function LandingPage() {
               <ul className="mt-4 space-y-3 text-sm text-slate-600">
                 <li className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-blue-600" />
-                  support@mediassist.ai
+                  support@healflow.com
                 </li>
                 <li className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-blue-600" />
@@ -689,7 +674,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-8 flex flex-col gap-4 border-t border-slate-200 pt-5 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-            <p>© 2026 MediAssist AI. All rights reserved.</p>
+            <p>© 2026 HealFlow. All rights reserved.</p>
             <div className="flex flex-wrap gap-4">
               <button type="button" onClick={() => scrollToSection('disclaimer')} className="font-medium text-slate-600 transition hover:text-blue-700">
                 Medical Disclaimer
