@@ -142,7 +142,7 @@ async function parseWebhookResponse(res: Response): Promise<string> {
   }
 }
 
-function buildWebhookPayload(content: string) {
+function buildWebhookPayload(content: string, sessionId?: string | null) {
   return {
     message: content,
     chatInput: content,
@@ -150,6 +150,7 @@ function buildWebhookPayload(content: string) {
     text: content,
     query: content,
     prompt: content,
+    sessionId: sessionId || "default-session-id"
   }
 }
 
@@ -454,7 +455,7 @@ export default function Dashboard() {
     try {
       const res = await fetch(WEBHOOK_URL, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildWebhookPayload(content)),
+        body: JSON.stringify(buildWebhookPayload(content, currentSessionId)),
       })
       if (!res.ok) throw new Error('fail')
       const reply = await parseWebhookResponse(res)
@@ -668,7 +669,7 @@ export default function Dashboard() {
             </div>
 
             {/* Quick chips */}
-            {/* <div className="px-3 py-2 flex gap-1.5 overflow-x-auto scrollbar-none shrink-0 border-t border-gray-100 bg-white">
+            <div className="px-3 py-2 flex gap-1.5 overflow-x-auto scrollbar-none shrink-0 border-t border-gray-100 bg-white">
               {['Headache', 'Fever', 'Blood pressure', 'Medication'].map(chip => (
                 <button
                   key={chip}
@@ -678,7 +679,7 @@ export default function Dashboard() {
                   {chip}
                 </button>
               ))}
-            </div> */}
+            </div>
 
             {/* Input */}
             <div className="px-3 py-3 border-t border-gray-100 bg-white shrink-0">

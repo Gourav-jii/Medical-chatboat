@@ -17,10 +17,12 @@ app.use(express.json());
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chats');
 const doctorRoutes = require('./routes/doctors');
+const appointmentRoutes = require('./routes/appointments');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/doctors', doctorRoutes);
+app.use('/api/appointments', appointmentRoutes);
 
 // Database Seeding for Doctors
 const Doctor = require('./models/Doctor');
