@@ -248,6 +248,8 @@ function renderSessionIcon(icon: string) {
   }
 }
 
+const API_URL = 'http://localhost:5000/api'
+
 // ── Main Dashboard Component ──────────────────────────────────────────────────
 export default function Dashboard() {
   const { user, logout } = useAuth()
@@ -257,7 +259,6 @@ export default function Dashboard() {
   const [lastRecommendedSpecialty, setLastRecommendedSpecialty] = useState<string | null>(null)
 
   // Lifted States
-  const API_URL = 'http://localhost:5000/api'
   const [doctorsList, setDoctorsList] = useState<Doctor[]>([])
   useEffect(() => {
     fetch(`${API_URL}/doctors`)
@@ -310,7 +311,23 @@ export default function Dashboard() {
   }, [chatSessions, isChatsLoaded, user?.email])
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   
-  const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS)
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+
+  useEffect(() => {
+    if (!user?.email) return
+    const fetchAppointments = async () => {
+      try {
+        const response = await fetch(`${API_URL}/appointments?email=${user.email}`)
+        if (response.ok) {
+          const data = await response.json()
+          setAppointments(data)
+        }
+      } catch (err) {
+        console.error('Failed to fetch appointments:', err)
+      }
+    }
+    fetchAppointments()
+  }, [user?.email])
 
   const handleConfirmBooking = async (
     msgId: string,
@@ -339,8 +356,36 @@ export default function Dashboard() {
       status: 'upcoming',
     }
 
-    // 5. Update appointments state
-    setAppointments((prev) => [newApt, ...prev])
+    // 5. Save appointment to MongoDB & Update appointments state
+    if (user?.email) {
+      try {
+        const response = await fetch(`${API_URL}/appointments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userEmail: user.email,
+            doctor: doctorName,
+            specialty: doc.specialty,
+            avatar: doc.avatar,
+            date: formattedDate,
+            time: time,
+            status: 'upcoming'
+          })
+        })
+        if (response.ok) {
+          const savedApt = await response.json()
+          setAppointments((prev) => [savedApt, ...prev])
+        } else {
+          console.error('Failed to save appointment to DB')
+          setAppointments((prev) => [newApt, ...prev])
+        }
+      } catch (err) {
+        console.error('Error saving appointment:', err)
+        setAppointments((prev) => [newApt, ...prev])
+      }
+    } else {
+      setAppointments((prev) => [newApt, ...prev])
+    }
 
     // 6. Toast success message
     toast.success(`Appointment booked with ${doctorName}!`)
@@ -1752,6 +1797,7 @@ function DoctorRecommendationsTab({ doctors,
   setSuggestedSpecialty,
   setAppointments,
 }: DoctorsTabProps) {
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('All')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
@@ -1828,7 +1874,36 @@ function DoctorRecommendationsTab({ doctors,
       status: 'upcoming',
     }
 
-    setAppointments((prev) => [newApt, ...prev])
+    if (user?.email) {
+      try {
+        const response = await fetch(`${API_URL}/appointments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userEmail: user.email,
+            doctor: form.doctor,
+            specialty: bookingDoc?.specialty ?? 'Generalist',
+            avatar: bookingDoc?.avatar ?? 'MD',
+            date: formatted,
+            time: form.time,
+            status: 'upcoming'
+          })
+        })
+        if (response.ok) {
+          const savedApt = await response.json()
+          setAppointments((prev) => [savedApt, ...prev])
+        } else {
+          console.error('Failed to save appointment to DB')
+          setAppointments((prev) => [newApt, ...prev])
+        }
+      } catch (err) {
+        console.error('Error saving appointment:', err)
+        setAppointments((prev) => [newApt, ...prev])
+      }
+    } else {
+      setAppointments((prev) => [newApt, ...prev])
+    }
+
     setSubmitting(false)
     setShowModal(false)
     setShowSuccess(true)
@@ -2128,12 +2203,44 @@ interface ScheduledConsultationsProps {
 }
 
 function ScheduledConsultationsTab({ appointments, setAppointments }: ScheduledConsultationsProps) {
+  const { user } = useAuth()
   const [detailApt, setDetailApt] = useState<Appointment | null>(null)
 
-  const handleCancelApt = (apt: Appointment) => {
-    setAppointments((prev) =>
-      prev.map((a) => a.doctor === apt.doctor && a.date === apt.date ? { ...a, status: 'completed' } : a)
-    )
+  const handleCancelApt = async (apt: Appointment) => {
+    if (user?.email) {
+      try {
+        const response = await fetch(`${API_URL}/appointments/cancel`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userEmail: user.email,
+            doctor: apt.doctor,
+            date: apt.date
+          })
+        })
+        if (response.ok) {
+          setAppointments((prev) =>
+            prev.map((a) => a.doctor === apt.doctor && a.date === apt.date ? { ...a, status: 'completed' } : a)
+          )
+        } else {
+          console.error('Failed to cancel appointment in DB')
+          // Fallback update
+          setAppointments((prev) =>
+            prev.map((a) => a.doctor === apt.doctor && a.date === apt.date ? { ...a, status: 'completed' } : a)
+          )
+        }
+      } catch (err) {
+        console.error('Error cancelling appointment:', err)
+        // Fallback update
+        setAppointments((prev) =>
+          prev.map((a) => a.doctor === apt.doctor && a.date === apt.date ? { ...a, status: 'completed' } : a)
+        )
+      }
+    } else {
+      setAppointments((prev) =>
+        prev.map((a) => a.doctor === apt.doctor && a.date === apt.date ? { ...a, status: 'completed' } : a)
+      )
+    }
   }
 
   return (

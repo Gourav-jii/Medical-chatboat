@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   AlertCircle,
   ArrowRight,
@@ -80,6 +80,7 @@ function PasswordStrength({ password }: { password: string }) {
 }
 
 export default function SignupPage() {
+  const navigate = useNavigate()
   const { signup } = useAuth()
   const [form, setForm] = useState({ name: '', email: '', role: '', password: '', confirm: '' })
   const [showPassword, setShowPassword] = useState(false)
@@ -127,6 +128,7 @@ export default function SignupPage() {
     setLoading(true)
     try {
       await signup(form.name, form.email, form.password, form.role)
+      navigate('/login')
     } catch {
       setApiError('Something went wrong. Please try again.')
     } finally {

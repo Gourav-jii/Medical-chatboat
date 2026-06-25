@@ -153,9 +153,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message || 'Email already registered');
       }
 
-      setUser({ name: data.user.name, email: data.user.email, role: data.user.role });
-      setIsAuthenticated(true);
-      localStorage.setItem(JWT_KEY, data.token);
       toast.success('Account created successfully!');
     } catch (error) {
       console.error(error);
