@@ -23,6 +23,18 @@ router.post('/', async (req, res) => {
     if (!userEmail || !doctor || !specialty || !date || !time) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+
+    // Check if appointment already exists for the same doctor, date, and time
+    const existingAppointment = await Appointment.findOne({
+      doctor,
+      date,
+      time,
+      status: 'upcoming'
+    });
+    if (existingAppointment) {
+      return res.status(400).json({ error: 'This appointment slot is already booked.' });
+    }
+
     const newAppointment = new Appointment({
       userEmail,
       doctor,

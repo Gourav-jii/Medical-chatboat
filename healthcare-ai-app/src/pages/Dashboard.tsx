@@ -8,7 +8,7 @@ import {
   Activity, Calendar, Home,
   ChevronRight, Paperclip, AlertTriangle, CheckCircle,
   Clock, Shield, Star, Loader2, Stethoscope, History, Search, Info, Plus,
-  Sparkles, Pill, AlertCircle, LayoutGrid, List, Trash2
+  Sparkles, Pill, AlertCircle, LayoutGrid, List, Trash2, RefreshCw
 } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -209,6 +209,7 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
   { doctor: 'Dr. Neha Singh', specialty: 'Neurologist', date: 'Jul 2, 2026', time: '2:30 PM', status: 'upcoming', avatar: 'NS' },
   { doctor: 'Dr. Anjali Gupta', specialty: 'Dermatologist', date: 'Jun 10, 2026', time: '9:00 AM', status: 'completed', avatar: 'AG' },
 ]
+void INITIAL_APPOINTMENTS
 
 const INITIAL_CHAT_SESSIONS: ChatSession[] = []
 
@@ -357,6 +358,10 @@ export default function Dashboard() {
     }
 
     // 5. Save appointment to MongoDB & Update appointments state
+    let success = false
+    let savedAptObj: Appointment = newApt
+    let errorMsg = ''
+
     if (user?.email) {
       try {
         const response = await fetch(`${API_URL}/appointments`, {
@@ -373,46 +378,77 @@ export default function Dashboard() {
           })
         })
         if (response.ok) {
-          const savedApt = await response.json()
-          setAppointments((prev) => [savedApt, ...prev])
+          savedAptObj = await response.json()
+          success = true
         } else {
-          console.error('Failed to save appointment to DB')
-          setAppointments((prev) => [newApt, ...prev])
+          const data = await response.json()
+          errorMsg = data.error || 'Failed to save appointment to DB'
+          console.error(errorMsg)
         }
-      } catch (err) {
+      } catch (err: any) {
+        errorMsg = err.message || 'Error saving appointment'
         console.error('Error saving appointment:', err)
-        setAppointments((prev) => [newApt, ...prev])
       }
     } else {
-      setAppointments((prev) => [newApt, ...prev])
+      success = true
     }
 
-    // 6. Toast success message
-    toast.success(`Appointment booked with ${doctorName}!`)
+    if (success) {
+      setAppointments((prev) => [savedAptObj, ...prev])
 
-    // 7. Update message text in chat
-    const successText = `[BOOKING_SUCCESS]\n✓ **Appointment Booked Successfully!**\n\n**Doctor:** ${doctorName} (${doc.specialty})\n**Date:** ${formattedDate}\n**Time:** ${time}\n**Reason:** ${reason || 'General consultation'}\n\nConfirmation sent. You can view this booking in your overview dashboard.`
+      // 6. Toast success message
+      toast.success(`Appointment booked with ${doctorName}!`)
 
-    setFloatMsgs((prev) =>
-      prev.map((m) => (m.id === msgId ? { ...m, content: successText } : m))
-    )
+      // 7. Update message text in chat
+      const successText = `[BOOKING_SUCCESS]\n✓ **Appointment Booked Successfully!**\n\n**Doctor:** ${doctorName} (${doc.specialty})\n**Date:** ${formattedDate}\n**Time:** ${time}\n**Reason:** ${reason || 'General consultation'}\n\nConfirmation sent. You can view this booking in your overview dashboard.`
 
-    if (activeSessionId) {
-      setChatSessions((prev) =>
-        prev.map((s) => {
-          if (s.id === activeSessionId) {
-            const updatedMsgs = s.messages.map((m) =>
-              m.id === msgId ? { ...m, content: successText } : m
-            )
-            return {
-              ...s,
-              messages: updatedMsgs,
-              preview: '✓ Appointment Booked Successfully!',
-            }
-          }
-          return s
-        })
+      setFloatMsgs((prev) =>
+        prev.map((m) => (m.id === msgId ? { ...m, content: successText } : m))
       )
+
+      if (activeSessionId) {
+        setChatSessions((prev) =>
+          prev.map((s) => {
+            if (s.id === activeSessionId) {
+              const updatedMsgs = s.messages.map((m) =>
+                m.id === msgId ? { ...m, content: successText } : m
+              )
+              return {
+                ...s,
+                messages: updatedMsgs,
+                preview: '✓ Appointment Booked Successfully!',
+              }
+            }
+            return s
+          })
+        )
+      }
+    } else {
+      toast.error(errorMsg || 'This appointment slot is already booked.')
+      
+      const failureText = `[BOOKING_FAILED]\n❌ **Appointment Booking Failed**\n\n**Doctor:** ${doctorName} (${doc.specialty})\n**Date:** ${formattedDate}\n**Time:** ${time}\n\n**Reason:** ${errorMsg || 'This appointment slot is already booked.'}\n\nPlease select another date or time slot.`
+
+      setFloatMsgs((prev) =>
+        prev.map((m) => (m.id === msgId ? { ...m, content: failureText } : m))
+      )
+
+      if (activeSessionId) {
+        setChatSessions((prev) =>
+          prev.map((s) => {
+            if (s.id === activeSessionId) {
+              const updatedMsgs = s.messages.map((m) =>
+                m.id === msgId ? { ...m, content: failureText } : m
+              )
+              return {
+                ...s,
+                messages: updatedMsgs,
+                preview: '❌ Appointment Booking Failed',
+              }
+            }
+            return s
+          })
+        )
+      }
     }
   }
 
@@ -457,7 +493,7 @@ export default function Dashboard() {
 
   const [showFloatingChat, setShowFloatingChat] = useState(false)
   const [floatMsgs, setFloatMsgs] = useState<Message[]>([
-    { id: 'f0', role: 'assistant', content: "Hi! I'm MediAI. Describe your symptoms or ask a health question.", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+    { id: 'f0', role: 'assistant', content: "Hi! I'm HealFlow AI. Describe your symptoms or ask a health question.", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
   ])
   const [floatInput, setFloatInput] = useState('')
   const [floatTyping, setFloatTyping] = useState(false)
@@ -576,6 +612,7 @@ export default function Dashboard() {
       }
     ])
     setActiveSessionId(null)
+    setFloatInput('')
     setShowFloatingChat(true)
   }
 
@@ -662,15 +699,28 @@ export default function Dashboard() {
                   <MessageCircle className="w-4 h-4 text-white" fill="white" />
                 </div>
                 <div>
-                  <p className="text-white text-xs font-bold leading-none">MediAI Assistant</p>
+                  <p className="text-white text-xs font-bold leading-none">HealFlow AI Assistant</p>
                   <p className="text-blue-100 text-[10px] mt-0.5 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 bg-green-300 rounded-full inline-block"></span> Online
                   </p>
                 </div>
               </div>
-              <button onClick={() => setShowFloatingChat(false)} className="w-7 h-7 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white cursor-pointer transition-colors outline-none focus:outline-none">
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button 
+                  onClick={startNewChat}
+                  title="Refresh Chat"
+                  className="w-7 h-7 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white cursor-pointer transition-colors outline-none focus:outline-none"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+                <button 
+                  onClick={() => setShowFloatingChat(false)}
+                  title="Close Chat"
+                  className="w-7 h-7 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white cursor-pointer transition-colors outline-none focus:outline-none"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Messages */}
@@ -701,6 +751,8 @@ export default function Dashboard() {
                       </div>
                     ) : msg.content.includes('[BOOKING_SUCCESS]') ? (
                       <BookingSuccessCard content={msg.content} />
+                    ) : msg.content.includes('[BOOKING_FAILED]') ? (
+                      <BookingFailureCard content={msg.content} />
                     ) : (
                       msg.content
                     )}
@@ -766,7 +818,7 @@ export default function Dashboard() {
         <button
           onClick={() => setShowFloatingChat(!showFloatingChat)}
           className="w-14 h-14 bg-gradient-to-br from-blue-500 to-emerald-600 hover:from-blue-600 hover:to-emerald-700 rounded-full shadow-2xl flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 relative"
-          title="Chat with MediAI"
+          title="Chat with HealFlow AI"
         >
           {showFloatingChat
             ? <X className="w-6 h-6 text-white" />
@@ -1063,6 +1115,51 @@ function BookingSuccessCard({ content }: { content: string }) {
   )
 }
 
+function BookingFailureCard({ content }: { content: string }) {
+  const docMatch = content.match(/\*\*Doctor:\*\*\s*(.+)/)
+  const dateMatch = content.match(/\*\*Date:\*\*\s*(.+)/)
+  const timeMatch = content.match(/\*\*Time:\*\*\s*(.+)/)
+  const reasonMatch = content.match(/\*\*Reason:\*\*\s*(.+)/)
+
+  const doctor = docMatch ? docMatch[1].trim() : ''
+  const date = dateMatch ? dateMatch[1].trim() : ''
+  const time = timeMatch ? timeMatch[1].trim() : ''
+  const reason = reasonMatch ? reasonMatch[1].trim() : ''
+
+  return (
+    <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 text-slate-800 space-y-3.5 shadow-2xs max-w-full text-xs text-left animate-fadeIn">
+      <div className="border-b border-rose-200 pb-2">
+        <p className="font-bold text-rose-800 flex items-center gap-1.5 text-[13px]">
+          <AlertTriangle className="w-4 h-4 text-rose-605 animate-pulse shrink-0" /> Appointment Booking Failed
+        </p>
+      </div>
+
+      <div className="space-y-2.5">
+        <div className="flex justify-between border-b border-slate-100 pb-1.5">
+          <span className="font-semibold text-slate-500">Doctor</span>
+          <span className="font-bold text-slate-800">{doctor}</span>
+        </div>
+        <div className="flex justify-between border-b border-slate-100 pb-1.5">
+          <span className="font-semibold text-slate-500">Date</span>
+          <span className="font-bold text-slate-800">{date}</span>
+        </div>
+        <div className="flex justify-between border-b border-slate-100 pb-1.5">
+          <span className="font-semibold text-slate-500">Time</span>
+          <span className="font-bold text-slate-800">{time}</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="font-semibold text-slate-500">Reason</span>
+          <span className="text-slate-700 bg-white border border-slate-200 rounded-xl px-3 py-2 leading-relaxed break-words">{reason || 'This appointment slot is already booked.'}</span>
+        </div>
+      </div>
+
+      <div className="bg-rose-100/50 border border-rose-200/50 rounded-xl p-2.5 text-center text-[10px] text-rose-800 font-semibold leading-relaxed">
+        Please select another date, doctor, or time slot.
+      </div>
+    </div>
+  )
+}
+
 // ── 1. AI Health Assistant Tab ────────────────────────────────────────────────
 interface ChatTabProps {
   messages: Message[]
@@ -1290,6 +1387,8 @@ export function AIHealthAssistantTab({
                     </div>
                   ) : msg.content.includes('[BOOKING_SUCCESS]') ? (
                     <BookingSuccessCard content={msg.content} />
+                  ) : msg.content.includes('[BOOKING_FAILED]') ? (
+                    <BookingFailureCard content={msg.content} />
                   ) : (
                     msg.content
                   )}
@@ -1892,24 +1991,31 @@ function DoctorRecommendationsTab({ doctors,
         if (response.ok) {
           const savedApt = await response.json()
           setAppointments((prev) => [savedApt, ...prev])
+          setSubmitting(false)
+          setShowModal(false)
+          setShowSuccess(true)
+          setForm({ doctor: '', date: '', time: '', reason: '' })
+          setErrors({})
+          setTimeout(() => setShowSuccess(false), 3500)
         } else {
-          console.error('Failed to save appointment to DB')
-          setAppointments((prev) => [newApt, ...prev])
+          const data = await response.json()
+          toast.error(data.error || 'Failed to save appointment to DB')
+          setSubmitting(false)
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error saving appointment:', err)
-        setAppointments((prev) => [newApt, ...prev])
+        toast.error(err.message || 'Error saving appointment')
+        setSubmitting(false)
       }
     } else {
       setAppointments((prev) => [newApt, ...prev])
+      setSubmitting(false)
+      setShowModal(false)
+      setShowSuccess(true)
+      setForm({ doctor: '', date: '', time: '', reason: '' })
+      setErrors({})
+      setTimeout(() => setShowSuccess(false), 3500)
     }
-
-    setSubmitting(false)
-    setShowModal(false)
-    setShowSuccess(true)
-    setForm({ doctor: '', date: '', time: '', reason: '' })
-    setErrors({})
-    setTimeout(() => setShowSuccess(false), 3500)
   }
 
 
@@ -2205,6 +2311,7 @@ interface ScheduledConsultationsProps {
 function ScheduledConsultationsTab({ appointments, setAppointments }: ScheduledConsultationsProps) {
   const { user } = useAuth()
   const [detailApt, setDetailApt] = useState<Appointment | null>(null)
+  const [showAll, setShowAll] = useState(false)
 
   const handleCancelApt = async (apt: Appointment) => {
     if (user?.email) {
@@ -2262,69 +2369,81 @@ function ScheduledConsultationsTab({ appointments, setAppointments }: ScheduledC
           <p className="text-[10px] text-gray-400">You can book appointments under the specialist recommendations section.</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {appointments.map((apt, idx) => (
-            <div 
-              key={idx} 
-              className="bg-white border border-slate-200 rounded-3xl p-5 flex flex-col justify-between gap-4 shadow-2xs hover:shadow-md hover:border-blue-400 transition-all duration-200 relative group overflow-hidden"
-            >
-              {/* Visual Accent Bar */}
-              <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${apt.status === 'upcoming' ? 'bg-gradient-to-b from-blue-500 to-indigo-650' : 'bg-gradient-to-b from-slate-300 to-slate-450'}`} />
-              
-              <div className="flex items-start justify-between gap-2 pl-2">
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-2xl text-sm font-extrabold flex items-center justify-center shadow-xs shrink-0 ${
-                    apt.avatar === 'RS' 
-                      ? 'bg-gradient-to-br from-red-500/10 to-red-600/15 text-red-700' 
-                      : apt.avatar === 'NS' 
-                      ? 'bg-gradient-to-br from-indigo-500/10 to-indigo-600/15 text-indigo-750' 
-                      : 'bg-gradient-to-br from-emerald-500/10 to-emerald-600/15 text-emerald-700'
-                  }`}>
-                    {apt.avatar}
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-xs font-extrabold text-slate-905 truncate">{apt.doctor}</h4>
-                    <p className="text-[10px] text-slate-450 font-semibold">{apt.specialty}</p>
-                    
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1.8 text-[10px] text-slate-500 font-semibold">
-                      <span className="bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md text-slate-600">
-                        {apt.date}
-                      </span>
-                      <span className="bg-blue-50 border border-blue-150 text-blue-600 px-2 py-0.5 rounded-md">
-                        {apt.time}
-                      </span>
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {(showAll ? appointments : appointments.slice(0, 5)).map((apt, idx) => (
+              <div 
+                key={idx} 
+                className="bg-white border border-slate-200 rounded-3xl p-5 flex flex-col justify-between gap-4 shadow-2xs hover:shadow-md hover:border-blue-400 transition-all duration-200 relative group overflow-hidden"
+              >
+                {/* Visual Accent Bar */}
+                <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${apt.status === 'upcoming' ? 'bg-gradient-to-b from-blue-500 to-indigo-650' : 'bg-gradient-to-b from-slate-300 to-slate-450'}`} />
+                
+                <div className="flex items-start justify-between gap-2 pl-2">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 rounded-2xl text-sm font-extrabold flex items-center justify-center shadow-xs shrink-0 ${
+                      apt.avatar === 'RS' 
+                        ? 'bg-gradient-to-br from-red-500/10 to-red-600/15 text-red-700' 
+                        : apt.avatar === 'NS' 
+                        ? 'bg-gradient-to-br from-indigo-500/10 to-indigo-600/15 text-indigo-750' 
+                        : 'bg-gradient-to-br from-emerald-500/10 to-emerald-600/15 text-emerald-700'
+                    }`}>
+                      {apt.avatar}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-extrabold text-slate-905 truncate">{apt.doctor}</h4>
+                      <p className="text-[10px] text-slate-450 font-semibold">{apt.specialty}</p>
+                      
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.8 text-[10px] text-slate-500 font-semibold">
+                        <span className="bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md text-slate-600">
+                          {apt.date}
+                        </span>
+                        <span className="bg-blue-50 border border-blue-150 text-blue-600 px-2 py-0.5 rounded-md">
+                          {apt.time}
+                        </span>
+                      </div>
                     </div>
                   </div>
+
+                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 border ${
+                    apt.status === 'upcoming' 
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                      : 'bg-slate-100 text-slate-500 border-slate-200'
+                  }`}>
+                    {apt.status === 'upcoming' ? '● Upcoming' : '✓ Completed'}
+                  </span>
                 </div>
 
-                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 border ${
-                  apt.status === 'upcoming' 
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                    : 'bg-slate-100 text-slate-500 border-slate-200'
-                }`}>
-                  {apt.status === 'upcoming' ? '● Upcoming' : '✓ Completed'}
-                </span>
+                {apt.status === 'upcoming' && (
+                  <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                    <button
+                      onClick={() => setDetailApt(apt)}
+                      className="text-[10px] font-bold border border-slate-200 hover:bg-slate-50 hover:text-blue-600 text-slate-600 px-3.5 py-1.8 rounded-xl transition-all cursor-pointer"
+                    >
+                      Details
+                    </button>
+                    <button
+                      onClick={() => handleCancelApt(apt)}
+                      className="text-[10px] font-bold border border-red-200 hover:bg-red-500 hover:text-white hover:border-red-500 text-red-500 px-3.5 py-1.8 rounded-xl transition-all cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
-
-              {apt.status === 'upcoming' && (
-                <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
-                  <button
-                    onClick={() => setDetailApt(apt)}
-                    className="text-[10px] font-bold border border-slate-200 hover:bg-slate-50 hover:text-blue-600 text-slate-600 px-3.5 py-1.8 rounded-xl transition-all cursor-pointer"
-                  >
-                    Details
-                  </button>
-                  <button
-                    onClick={() => handleCancelApt(apt)}
-                    className="text-[10px] font-bold border border-red-200 hover:bg-red-500 hover:text-white hover:border-red-500 text-red-500 px-3.5 py-1.8 rounded-xl transition-all cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
+            ))}
+          </div>
+          {appointments.length > 5 && (
+            <div className="flex justify-center pt-4">
+              <button
+                onClick={() => setShowAll(!showAll)}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-650 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-4 py-2 rounded-xl transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+              >
+                {showAll ? 'See Less' : `See More (${appointments.length - 5} more)`}
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       {/* ── Detail Modal ── */}
@@ -2941,7 +3060,7 @@ function HomeTab({ scrollToSection, appointments, chatSessions, setShowFloatingC
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-blue-50 shadow-sm backdrop-blur mb-3">
               <Sparkles className="h-3.5 w-3.5 text-amber-300 animate-pulse" />
-              AI-Powered Healthcare Assistant
+              HealFlow AI Assistant
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
               Welcome back, {user?.name?.split(' ')[0] ?? 'User'}!
@@ -2954,7 +3073,7 @@ function HomeTab({ scrollToSection, appointments, chatSessions, setShowFloatingC
             onClick={() => setShowFloatingChat(true)}
             className="bg-white hover:bg-blue-50 text-blue-700 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition flex items-center gap-2 cursor-pointer shrink-0"
           >
-            <Bot className="w-4 h-4" /> Ask AI Assistant
+            <Bot className="w-4 h-4" /> Ask HealFlow AI
           </button>
         </div>
       </div>
