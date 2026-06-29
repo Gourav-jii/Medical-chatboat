@@ -186,24 +186,6 @@ const WEBHOOK_URL = (() => {
 })()
 
 
-const MEDICINES_DB = [
-  { name: 'Lisinopril', category: 'Heart', desc: 'Used to treat high blood pressure and heart failure.', guidelines: 'Take once daily in the morning, with or without food. Avoid potassium supplements.', sideEffects: 'Dry cough, dizziness, headache, fatigue.' },
-  { name: 'Metformin', category: 'Diabetes', desc: 'First-line medication for the treatment of type 2 diabetes.', guidelines: 'Take twice daily with meals (breakfast and dinner) to minimize stomach upset.', sideEffects: 'Nausea, diarrhea, abdominal discomfort, metallic taste.' },
-  { name: 'Vitamin D3', category: 'Vitamins', desc: 'Supports bone health, calcium absorption, and immune function.', guidelines: 'Take once daily, preferably with a fat-containing meal for optimal absorption.', sideEffects: 'Extremely rare at normal doses. High doses can cause nausea or weakness.' },
-  { name: 'Paracetamol', category: 'Pain Relief', desc: 'Common pain reliever and fever reducer.', guidelines: 'Take 500mg - 1000mg every 4-6 hours as needed. Do not exceed 4000mg in 24 hours.', sideEffects: 'Rare, but excessive dose can cause severe liver damage. Avoid alcohol.' },
-  { name: 'Ibuprofen', category: 'Pain Relief', desc: 'Nonsteroidal anti-inflammatory drug (NSAID) used for pain and swelling.', guidelines: 'Take 200mg - 400mg every 6 hours with food or milk to prevent stomach irritation.', sideEffects: 'Heartburn, nausea, dizziness, gastrointestinal bleeding on long-term use.' },
-  { name: 'Cetirizine', category: 'Allergy', desc: 'Antihistamine that treats hay fever and hives symptoms.', guidelines: 'Take 10mg once daily. Can cause mild drowsiness, avoid driving if affected.', sideEffects: 'Drowsiness, dry mouth, headache, sore throat.' },
-]
-
-const INITIAL_MEDICATIONS = [
-  { id: 'm1', name: 'Lisinopril', dose: '10mg', frequency: 'Once daily', remaining: 18, color: 'bg-blue-100 text-blue-700 border-blue-200', taken: true, history: ['Jun 17 – Taken 8:00 AM', 'Jun 16 – Taken 8:05 AM', 'Jun 15 – Taken 7:55 AM', 'Jun 14 – Missed', 'Jun 13 – Taken 8:10 AM'] },
-  { id: 'm2', name: 'Metformin', dose: '500mg', frequency: 'Twice daily', remaining: 30, color: 'bg-green-100 text-green-700 border-green-200', taken: true, history: ['Jun 17 – Taken 8:00 AM', 'Jun 17 – Taken 8:00 PM', 'Jun 16 – Taken 8:00 AM', 'Jun 16 – Taken 8:00 PM'] },
-  { id: 'm3', name: 'Vitamin D3', dose: '2000 IU', frequency: 'Once daily', remaining: 5, color: 'bg-amber-100 text-amber-700 border-amber-200', taken: false, history: ['Jun 16 – Taken 9:00 AM', 'Jun 15 – Taken 9:15 AM', 'Jun 14 – Taken 9:00 AM'] },
-]
-
-void MEDICINES_DB
-void INITIAL_MEDICATIONS
-
 const INITIAL_APPOINTMENTS: Appointment[] = [
   { doctor: 'Dr. Rajesh Sharma', specialty: 'Cardiologist', date: 'Jun 24, 2026', time: '10:00 AM', status: 'upcoming', avatar: 'RS' },
   { doctor: 'Dr. Neha Singh', specialty: 'Neurologist', date: 'Jul 2, 2026', time: '2:30 PM', status: 'upcoming', avatar: 'NS' },
@@ -235,6 +217,14 @@ function detectSessionIcon(content: string): string {
   return 'chat'
 }
 
+function detectSpecialty(content: string): string | null {
+  if (content.includes('[BOOKING_SYSTEM]') || content.includes('[BOOKING_SUCCESS]') || content.includes('[BOOKING_FAILED]')) {
+    return null
+  }
+  const match = content.match(/consulting\s+(?:a|an)\s+([a-zA-Z\s]+?)(?:\.|,|\n|$)/i)
+  return match ? match[1].trim() : null
+}
+
 function renderSessionIcon(icon: string) {
   switch (icon) {
     case 'headache':
@@ -258,6 +248,7 @@ export default function Dashboard() {
   const [activeSection, setActiveSection] = useState('home')
   const [suggestedSpecialty, setSuggestedSpecialty] = useState<string | null>(null)
   const [lastRecommendedSpecialty, setLastRecommendedSpecialty] = useState<string | null>(null)
+  const [preselectedDoctorName, setPreselectedDoctorName] = useState<string | null>(null)
 
   // Lifted States
   const [doctorsList, setDoctorsList] = useState<Doctor[]>([])
@@ -369,12 +360,14 @@ export default function Dashboard() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userEmail: user.email,
+            userName: user.name,
             doctor: doctorName,
             specialty: doc.specialty,
             avatar: doc.avatar,
             date: formattedDate,
             time: time,
-            status: 'upcoming'
+            status: 'upcoming',
+            reason: reason
           })
         })
         if (response.ok) {
@@ -390,12 +383,21 @@ export default function Dashboard() {
         console.error('Error saving appointment:', err)
       }
     } else {
-      success = true
+      const localCount = appointments.filter(
+        (a) => a.doctor === doctorName && a.date === formattedDate && a.time === time && a.status === 'upcoming'
+      ).length
+      if (localCount >= 10) {
+        success = false
+        errorMsg = 'Sorry, this time slot is fully booked. Please choose another available time.'
+      } else {
+        success = true
+      }
     }
 
     if (success) {
       setAppointments((prev) => [savedAptObj, ...prev])
-
+      setPreselectedDoctorName(null)
+      
       // 6. Toast success message
       toast.success(`Appointment booked with ${doctorName}!`)
 
@@ -557,9 +559,11 @@ export default function Dashboard() {
       const reply = await parseWebhookResponse(res)
 
       // Extract recommended specialist from bot reply
-      const specialtyMatch = reply.match(/consulting\s+(?:a|an)\s+([A-Z][a-zA-Z\s]+?)(?:\.|,|\n|$)/)
+      const specialtyMatch = reply.match(/consulting\s+(?:a|an)\s+([a-zA-Z\s]+?)(?:\.|,|\n|$)/i)
       if (specialtyMatch) {
-        setLastRecommendedSpecialty(specialtyMatch[1].trim())
+        const spec = specialtyMatch[1].trim()
+        setLastRecommendedSpecialty(spec)
+        setSuggestedSpecialty(spec)
       }
 
       const finalReply = isBookingTrigger(content)
@@ -581,6 +585,12 @@ export default function Dashboard() {
       )
     } catch {
       let reply = getResponse(content)
+      const specialtyMatch = reply.match(/consulting\s+(?:a|an)\s+([a-zA-Z\s]+?)(?:\.|,|\n|$)/i)
+      if (specialtyMatch) {
+        const spec = specialtyMatch[1].trim()
+        setLastRecommendedSpecialty(spec)
+        setSuggestedSpecialty(spec)
+      }
       if (isBookingTrigger(content)) {
         reply = "I can help you book an appointment right now. Please select a doctor, choose your preferred date & time, and confirm the booking below:\n\n[BOOKING_SYSTEM]"
       }
@@ -600,6 +610,31 @@ export default function Dashboard() {
       )
     } finally {
       setFloatTyping(false)
+    }
+  }
+
+  const handleBookFromDoctorList = (docName: string) => {
+    setPreselectedDoctorName(docName)
+    const botMsg: Message = {
+      id: (Date.now() + 1).toString(),
+      role: 'assistant',
+      content: `I can help you book an appointment with ${docName} right now. Please select your preferred date & time and confirm below:\n\n[BOOKING_SYSTEM]`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+    setFloatMsgs(prev => [...prev, botMsg])
+    if (activeSessionId) {
+      setChatSessions((prev) =>
+        prev.map((s) => {
+          if (s.id === activeSessionId) {
+            return {
+              ...s,
+              messages: [...s.messages, botMsg],
+              preview: `Booking with ${docName}...`
+            }
+          }
+          return s
+        })
+      )
     }
   }
 
@@ -744,6 +779,7 @@ export default function Dashboard() {
                           messageId={msg.id}
                           doctors={doctorsList}
                           suggestedSpecialty={lastRecommendedSpecialty}
+                          preselectedDoctorName={preselectedDoctorName}
                           onConfirm={async (msgId, docName, date, time, reason) => {
                             await handleConfirmBooking(msgId, docName, date, time, reason)
                           }}
@@ -754,7 +790,16 @@ export default function Dashboard() {
                     ) : msg.content.includes('[BOOKING_FAILED]') ? (
                       <BookingFailureCard content={msg.content} />
                     ) : (
-                      msg.content
+                      <div className="space-y-2 text-left">
+                        <p>{msg.content}</p>
+                        {msg.role === 'assistant' && detectSpecialty(msg.content) && (
+                          <InlineDoctorList
+                            specialty={detectSpecialty(msg.content)!}
+                            doctors={doctorsList}
+                            onBookDoctor={(docName) => handleBookFromDoctorList(docName)}
+                          />
+                        )}
+                      </div>
                     )}
                   </div>
                   {msg.role === 'user' && (
@@ -872,6 +917,7 @@ export default function Dashboard() {
             <DoctorRecommendationsTab doctors={doctorsList}
               suggestedSpecialty={suggestedSpecialty}
               setSuggestedSpecialty={setSuggestedSpecialty}
+              appointments={appointments}
               setAppointments={setAppointments}
             />
 
@@ -912,10 +958,75 @@ export default function Dashboard() {
   )
 }
 
+interface InlineDoctorListProps {
+  specialty: string
+  doctors: Doctor[]
+  onBookDoctor: (doctorName: string) => void
+}
+
+function InlineDoctorList({ specialty, doctors, onBookDoctor }: InlineDoctorListProps) {
+  // Filter doctors by specialty
+  let matchedDoctors = doctors.filter(d => 
+    d.specialty.toLowerCase().includes(specialty.toLowerCase())
+  )
+  
+  // Fallback to General Physician if no matching specialty is found in database
+  let isFallback = false
+  if (matchedDoctors.length === 0) {
+    matchedDoctors = doctors.filter(d => 
+      d.specialty.toLowerCase().includes('general physician')
+    )
+    isFallback = true
+  }
+
+  if (matchedDoctors.length === 0 && doctors.length > 0) {
+    matchedDoctors = doctors.slice(0, 2)
+  }
+
+  return (
+    <div className="mt-2.5 pt-2.5 border-t border-slate-100 space-y-2">
+      <p className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+        <Heart className="w-3 h-3 text-rose-500 fill-current" />
+        {isFallback 
+          ? `No specialists found for "${specialty}". Suggested General Physicians:` 
+          : `Suggested ${specialty}s for you:`}
+      </p>
+      <div className="space-y-1.5">
+        {matchedDoctors.map(doc => (
+          <div key={doc.name} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 hover:border-blue-300 hover:bg-blue-50/20 transition-all">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold flex items-center justify-center shrink-0">
+                {doc.avatar}
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-800 truncate">{doc.name}</p>
+                <div className="flex items-center gap-1 text-[9px] text-slate-500">
+                  <span>{doc.exp} exp</span>
+                  <span>•</span>
+                  <span className="flex items-center text-amber-500 font-medium">
+                    ★ {doc.rating}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => onBookDoctor(doc.name)}
+              className="text-[9px] font-bold bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-2.5 py-1 rounded-lg shadow-2xs transition-all shrink-0 cursor-pointer"
+            >
+              Book
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 interface InlineBookingCardProps {
   messageId: string
   doctors: Doctor[]
   suggestedSpecialty?: string | null
+  preselectedDoctorName?: string | null
   onConfirm: (
     msgId: string,
     doctorName: string,
@@ -925,12 +1036,25 @@ interface InlineBookingCardProps {
   ) => Promise<void>
 }
 
-function InlineBookingCard({ messageId, doctors, suggestedSpecialty, onConfirm }: InlineBookingCardProps) {
-  // Auto-select the doctor matching the AI-recommended specialty
-  const defaultDoctor = suggestedSpecialty
-    ? (doctors.find(d => d.specialty.toLowerCase().includes(suggestedSpecialty.toLowerCase())) || doctors[0])
-    : doctors[0]
+function InlineBookingCard({ messageId, doctors, suggestedSpecialty, preselectedDoctorName, onConfirm }: InlineBookingCardProps) {
+  // Auto-select the doctor matching the preselection or the AI-recommended specialty
+  const defaultDoctor = preselectedDoctorName
+    ? (doctors.find(d => d.name === preselectedDoctorName) || doctors[0])
+    : (suggestedSpecialty
+      ? (doctors.find(d => d.specialty.toLowerCase().includes(suggestedSpecialty.toLowerCase())) || doctors[0])
+      : doctors[0])
   const [selectedDoctor, setSelectedDoctor] = useState(defaultDoctor?.name || '')
+
+  useEffect(() => {
+    const defaultDoc = preselectedDoctorName
+      ? (doctors.find(d => d.name === preselectedDoctorName) || doctors[0])
+      : (suggestedSpecialty
+        ? (doctors.find(d => d.specialty.toLowerCase().includes(suggestedSpecialty.toLowerCase())) || doctors[0])
+        : doctors[0])
+    if (defaultDoc) {
+      setSelectedDoctor(defaultDoc.name)
+    }
+  }, [preselectedDoctorName, suggestedSpecialty, doctors])
   const [bookingDate, setBookingDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
   const [bookingReason, setBookingReason] = useState('')
@@ -1881,6 +2005,7 @@ function RiskMeter({ level }: { level: 'low' | 'medium' | 'high' }) {
 interface DoctorsTabProps { doctors: Doctor[], 
   suggestedSpecialty: string | null
   setSuggestedSpecialty: (spec: string | null) => void
+  appointments: Appointment[]
   setAppointments: React.Dispatch<React.SetStateAction<Appointment[]>>
 }
 
@@ -1894,6 +2019,7 @@ interface ScheduleForm {
 function DoctorRecommendationsTab({ doctors,
   suggestedSpecialty,
   setSuggestedSpecialty,
+  appointments,
   setAppointments,
 }: DoctorsTabProps) {
   const { user } = useAuth()
@@ -1980,12 +2106,14 @@ function DoctorRecommendationsTab({ doctors,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userEmail: user.email,
+            userName: user.name,
             doctor: form.doctor,
             specialty: bookingDoc?.specialty ?? 'Generalist',
             avatar: bookingDoc?.avatar ?? 'MD',
             date: formatted,
             time: form.time,
-            status: 'upcoming'
+            status: 'upcoming',
+            reason: form.reason
           })
         })
         if (response.ok) {
@@ -2008,13 +2136,21 @@ function DoctorRecommendationsTab({ doctors,
         setSubmitting(false)
       }
     } else {
-      setAppointments((prev) => [newApt, ...prev])
-      setSubmitting(false)
-      setShowModal(false)
-      setShowSuccess(true)
-      setForm({ doctor: '', date: '', time: '', reason: '' })
-      setErrors({})
-      setTimeout(() => setShowSuccess(false), 3500)
+      const localCount = appointments.filter(
+        (a) => a.doctor === form.doctor && a.date === formatted && a.time === form.time && a.status === 'upcoming'
+      ).length
+      if (localCount >= 10) {
+        toast.error('Sorry, this time slot is fully booked. Please choose another available time.')
+        setSubmitting(false)
+      } else {
+        setAppointments((prev) => [newApt, ...prev])
+        setSubmitting(false)
+        setShowModal(false)
+        setShowSuccess(true)
+        setForm({ doctor: '', date: '', time: '', reason: '' })
+        setErrors({})
+        setTimeout(() => setShowSuccess(false), 3500)
+      }
     }
   }
 
